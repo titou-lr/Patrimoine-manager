@@ -310,8 +310,8 @@ export default function PortfolioOptimizer() {
         </div>
 
         {/* Results area — scroll */}
-        <div className="scroll" style={{ flex: 1, padding: '22px 26px 50px' }}>
-          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div className="scroll" style={{ flex: 1, padding: '16px 22px 40px' }}>
+          <div style={{ maxWidth: 960, margin: '0 auto', paddingLeft: 4, paddingRight: 4 }}>
 
         {/* ── PARAMÈTRES ──────────────────────────────────────────────── */}
         <div className="space-y-5">
@@ -353,28 +353,28 @@ export default function PortfolioOptimizer() {
           </div>
 
           {/* Section paramètres d'optimisation */}
-          <div className="bg-surface border border-border rounded-2xl p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Paramètres d'optimisation</h3>
-            <div className="space-y-4">
+          <div className="bg-surface border border-border rounded-2xl p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Paramètres d'optimisation</h3>
+            <div className="grid grid-cols-2 gap-4">
 
               {/* Rendement minimum acceptable */}
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-muted uppercase tracking-wider">Rendement minimum acceptable (%/an)</span>
+                <span className="text-[10px] text-muted uppercase tracking-wider">Rendement min. acceptable</span>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
                     value={targetReturn}
                     onChange={e => { setTargetReturn(Number(e.target.value)); setTargetWarning(null) }}
                     min={0} max={30} step={0.5}
-                    className={`w-24 h-9 bg-elevated border rounded-lg px-3 text-sm font-mono text-foreground ${
+                    className={`w-20 h-8 bg-elevated border rounded-lg px-3 text-sm font-mono text-foreground ${
                       targetWarning ? 'border-yellow-500' : 'border-border'
                     }`}
                   />
-                  <span className="text-sm text-muted">%/an</span>
+                  <span className="text-xs text-muted">%/an</span>
                 </div>
                 {allAssets.length > 0 && (
                   <span className="text-[10px] text-muted">
-                    Maximum atteignable avec vos actifs : {(maxAchievableNetReturn * 100).toFixed(1)}%
+                    Max : {(maxAchievableNetReturn * 100).toFixed(1)}%
                   </span>
                 )}
                 {targetWarning && (
@@ -385,14 +385,14 @@ export default function PortfolioOptimizer() {
               {/* Horizon */}
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] text-muted uppercase tracking-wider">Horizon</span>
-                <div className="h-9 flex items-center text-sm font-mono text-orange tabular-nums">
+                <div className="h-8 flex items-center text-sm font-mono tabular-nums" style={{ color: 'var(--primary)' }}>
                   {globalParams.duration} ans
-                  <span className="ml-2 text-xs text-muted font-normal">(depuis les paramètres)</span>
+                  <span className="ml-2 text-xs text-muted font-normal">(paramètres globaux)</span>
                 </div>
               </div>
 
-              {/* Tolérance au risque */}
-              <div className="flex flex-col gap-1">
+              {/* Tolérance au risque — pleine largeur */}
+              <div className="col-span-2 flex flex-col gap-1">
                 <span className="text-[10px] text-muted uppercase tracking-wider">Tolérance au risque</span>
                 <div className="flex gap-1">
                   {(['prudent', 'balanced', 'dynamic'] as const).map(rt => (
@@ -408,12 +408,10 @@ export default function PortfolioOptimizer() {
                       {rt === 'prudent' ? 'Prudent' : rt === 'balanced' ? 'Équilibré' : 'Dynamique'}
                     </button>
                   ))}
+                  <span className="text-[10px] text-muted ml-3 self-center">
+                    {riskTolerance === 'prudent' ? 'CVaR95 ≥ −10%' : riskTolerance === 'balanced' ? 'CVaR95 ≥ −20%' : 'Aucune contrainte CVaR'}
+                  </span>
                 </div>
-                <p className="text-[10px] text-muted mt-0.5">
-                  {riskTolerance === 'prudent' && 'CVaR95 ≥ −10%'}
-                  {riskTolerance === 'balanced' && 'CVaR95 ≥ −20%'}
-                  {riskTolerance === 'dynamic' && 'Aucune contrainte CVaR'}
-                </p>
               </div>
 
               {/* Nombre de simulations */}
@@ -425,11 +423,12 @@ export default function PortfolioOptimizer() {
                     value={nSimulations}
                     onChange={e => setNSimulations(Math.max(100, Math.min(5000, Number(e.target.value))))}
                     min={100} max={5000} step={100}
-                    className="w-24 h-9 bg-elevated border border-border rounded-lg px-3 text-sm font-mono text-foreground"
+                    className="w-20 h-8 bg-elevated border border-border rounded-lg px-3 text-sm font-mono text-foreground"
                   />
-                  <span className="text-xs text-muted">1 000 recommandé, 5 000 pour résultats plus précis (~10s)</span>
+                  <span className="text-[10px] text-muted">1 000 reco. · 5 000 précis</span>
                 </div>
               </label>
+
             </div>
           </div>
 
@@ -538,7 +537,7 @@ export default function PortfolioOptimizer() {
         <div className="space-y-5" style={{ marginTop: 20 }}>
 
           {!result && !running && (
-            <div className="bg-surface border border-border rounded-2xl flex flex-col items-center justify-center py-20 gap-4">
+            <div className="bg-surface border border-border rounded-2xl flex flex-col items-center justify-center py-12 gap-4">
               <div className="w-12 h-12 rounded-full bg-elevated flex items-center justify-center text-2xl">
                 ⚙
               </div>
@@ -576,7 +575,7 @@ export default function PortfolioOptimizer() {
               </div>
 
               {/* Tableau allocation optimisée */}
-              <div className="bg-surface border border-border rounded-2xl p-5">
+              <div className="bg-surface border border-border rounded-2xl p-4">
                 <h3 className="text-sm font-semibold text-foreground mb-4">Allocation optimisée</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
@@ -635,8 +634,8 @@ export default function PortfolioOptimizer() {
 
               {/* Graphique Monte-Carlo */}
               {mcResults && mcResults.length > 0 && (
-                <div className="bg-surface border border-border rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="bg-surface border border-border rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-foreground">Simulation Monte-Carlo</h3>
                     <button
                       onClick={() => setShowComparison(v => !v)}
@@ -736,7 +735,7 @@ export default function PortfolioOptimizer() {
 
               {/* Analyse des régimes économiques */}
               {regimeChartData.length > 0 && (
-                <div className="bg-surface border border-border rounded-2xl p-5">
+                <div className="bg-surface border border-border rounded-2xl p-4">
                   <h3 className="text-sm font-semibold text-foreground mb-4">Distribution des régimes simulés</h3>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={regimeChartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
@@ -771,33 +770,32 @@ export default function PortfolioOptimizer() {
 
               {/* Suggestions de placement fiscal */}
               {result.locationSuggestions.length > 0 && (
-                <div className="bg-surface border border-border rounded-2xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-4">
+                <div className="bg-surface border border-border rounded-2xl p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">
                     Optimisation fiscale inter-enveloppes
                   </h3>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {result.locationSuggestions.map(s => {
                       const srcEnv = envelopes.find(e => e.id === s.currentEnvelopeId)
                       const dstEnv = envelopes.find(e => e.id === s.suggestedEnvelopeId)
                       return (
                         <div
                           key={`${s.assetId}-${s.suggestedEnvelopeId}`}
-                          className="flex items-start justify-between gap-3 bg-elevated rounded-xl p-3"
+                          className="flex flex-col gap-2 bg-elevated rounded-xl p-3"
                         >
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-foreground">
-                              {s.assetName} → {dstEnv?.label ?? s.suggestedEnvelopeId}
-                            </div>
-                            <div className="text-xs text-muted mt-0.5">{s.reason}</div>
-                            <div className="text-xs text-muted">Depuis : {srcEnv?.label}</div>
+                          <div className="text-xs font-medium text-foreground leading-snug">
+                            {s.assetName}
+                            <span className="text-muted font-normal"> → {dstEnv?.label ?? s.suggestedEnvelopeId}</span>
                           </div>
-                          <div className="flex flex-col items-end gap-2 shrink-0">
-                            <span className="text-xs font-mono text-orange font-semibold">
+                          <div className="text-[10px] text-muted leading-snug">{s.reason}</div>
+                          <div className="text-[10px] text-muted">De : {srcEnv?.label}</div>
+                          <div className="flex items-center justify-between mt-auto pt-1">
+                            <span className="text-xs font-mono font-semibold" style={{ color: 'var(--success)' }}>
                               +{formatEur(s.taxSavingEstimate)}
                             </span>
                             <button
                               onClick={() => handleApplyLocationSuggestion(s)}
-                              className="text-[10px] px-2 py-1 rounded-lg bg-orange/15 text-orange hover:bg-orange/25 transition-colors"
+                              className="text-[10px] px-2 py-0.5 rounded-md bg-orange/15 text-orange hover:bg-orange/25 transition-colors"
                             >
                               Appliquer
                             </button>
