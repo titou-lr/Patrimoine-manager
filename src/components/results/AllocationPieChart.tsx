@@ -104,8 +104,8 @@ export default function AllocationPieChart({ results, envelopes }: Props) {
       <div className="row gap32" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
         {/* Donut 1 — par enveloppe */}
-        <div className="row gap16" style={{ alignItems: 'center', flex: 1, minWidth: 260 }}>
-          <div style={{ position: 'relative', width: 160, height: 160, flexShrink: 0, overflow: 'hidden' }}>
+        <div className="row gap16" style={{ alignItems: 'flex-start', flex: 1, minWidth: 260 }}>
+          <div style={{ width: 160, height: 160, flexShrink: 0 }}>
             <PieChart width={160} height={160}>
               <Pie
                 data={data}
@@ -120,27 +120,14 @@ export default function AllocationPieChart({ results, envelopes }: Props) {
                 {data.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Pie>
             </PieChart>
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              pointerEvents: 'none',
-            }}>
-              <span style={{
-                fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em',
-                opacity: 0.55, color: 'var(--ink-tertiary)',
-              }}>TOTAL</span>
-              <span style={{
-                fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-mono)',
-                color: 'var(--ink)', lineHeight: 1.2, marginTop: 2,
-              }}>
-                {formatEur(total)}
-              </span>
-            </div>
           </div>
 
-          {/* Légende enveloppes */}
+          {/* Colonne droite : info + légende enveloppes */}
           <div className="col" style={{ gap: 5, flex: 1 }}>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-tertiary)' }}>Total</div>
+              <div style={{ fontSize: 20, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{formatEur(total)}</div>
+            </div>
             {data.map(d => {
               const pct = Math.round((d.value / total) * 100)
               return (
@@ -165,8 +152,8 @@ export default function AllocationPieChart({ results, envelopes }: Props) {
         </div>
 
         {/* Donut 2 — par classe */}
-        <div className="row gap16" style={{ alignItems: 'center', flex: 1, minWidth: 200 }}>
-          <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0, overflow: 'hidden' }}>
+        <div className="row gap16" style={{ alignItems: 'flex-start', flex: 1, minWidth: 200 }}>
+          <div style={{ width: 140, height: 140, flexShrink: 0 }}>
             <PieChart width={140} height={140}>
               <Pie
                 data={classData}
@@ -181,29 +168,14 @@ export default function AllocationPieChart({ results, envelopes }: Props) {
                 {classData.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Pie>
             </PieChart>
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              pointerEvents: 'none',
-            }}>
-              <span style={{
-                fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)',
-                color: 'var(--ink)', lineHeight: 1,
-              }}>
-                {dominantPct}%
-              </span>
-              <span style={{
-                fontSize: 10, opacity: 0.65, color: 'var(--ink-tertiary)',
-                marginTop: 3, textAlign: 'center', maxWidth: 56,
-              }}>
-                {dominant?.name}
-              </span>
-            </div>
           </div>
 
-          {/* Légende classes */}
+          {/* Colonne droite : info + légende classes */}
           <div className="col" style={{ gap: 8, flex: 1 }}>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--ink)', lineHeight: 1 }}>{dominantPct}%</div>
+              <div style={{ fontSize: 10, opacity: 0.65, color: 'var(--ink-tertiary)', marginTop: 3 }}>{dominant?.name}</div>
+            </div>
             {classData.map(d => {
               const pct = Math.round((d.value / total) * 100)
               return (
