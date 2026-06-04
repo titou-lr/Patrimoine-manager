@@ -1,0 +1,392 @@
+[
+  {
+    "id": "boursobank",
+    "name": "BoursoBank",
+    "type": "banque-en-ligne",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": true, "fees": 0, "notes": "Taux réglementé 3%" },
+      "ldds": { "available": true, "fees": 0, "notes": "Taux réglementé 3%" },
+      "pea": {
+        "available": true,
+        "orderFees": 0,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "0€ sur ETF éligibles, 1,99€ min sur actions"
+      },
+      "cto": {
+        "available": true,
+        "orderFees": 0.99,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "1,99€ minimum par ordre"
+      },
+      "assurance_vie": {
+        "available": true,
+        "entryFees": 0,
+        "managementFees": 0.75,
+        "arbitrageFees": 0,
+        "notes": "Contrat Boursolife — frais UC 0,75%/an"
+      },
+      "per": { "available": false, "notes": "Non proposé" }
+    },
+    "pros": ["Zéro frais tenue de compte", "N°1 satisfaction client", "Interface moderne", "Cashback carte"],
+    "cons": ["SAV limité et parfois lent", "Pas d'agence physique", "Pas de PER"],
+    "rating": 4.5
+  },
+  {
+    "id": "fortuneo",
+    "name": "Fortuneo",
+    "type": "banque-en-ligne",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": true, "fees": 0, "notes": "" },
+      "ldds": { "available": true, "fees": 0, "notes": "" },
+      "pea": {
+        "available": true,
+        "orderFees": 0,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "0€ sur ETF Fortuneo Funds, 2€ min sur autres"
+      },
+      "cto": {
+        "available": true,
+        "orderFees": 1.0,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "2€ minimum par ordre"
+      },
+      "assurance_vie": {
+        "available": true,
+        "entryFees": 0,
+        "managementFees": 0.75,
+        "arbitrageFees": 0,
+        "notes": "Accès Suravenir Opportunités (3%+ en 2024)"
+      },
+      "per": {
+        "available": true,
+        "entryFees": 0,
+        "managementFees": 0.75,
+        "notes": "PER Fortuneo Retraite"
+      }
+    },
+    "pros": ["Carte Mastercard Gold gratuite", "ETF sans frais", "PER disponible", "Bonne assurance-vie"],
+    "cons": ["Moins connu que Boursobank", "Application mobile moins intuitive"],
+    "rating": 4.2
+  },
+  {
+    "id": "hello-bank",
+    "name": "Hello Bank!",
+    "type": "banque-en-ligne",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": true, "fees": 0, "notes": "" },
+      "ldds": { "available": true, "fees": 0, "notes": "" },
+      "pea": {
+        "available": true,
+        "orderFees": 1.0,
+        "custodyFees": 0,
+        "minOrder": 1,
+        "notes": "1€ minimum par ordre — accès ETF éligibles PEA"
+      },
+      "cto": {
+        "available": true,
+        "orderFees": 1.0,
+        "custodyFees": 0,
+        "minOrder": 1,
+        "notes": ""
+      },
+      "assurance_vie": {
+        "available": true,
+        "entryFees": 0,
+        "managementFees": 0.8,
+        "arbitrageFees": 0,
+        "notes": "BNP Paribas Multiplacements 2"
+      },
+      "per": { "available": false, "notes": "Non proposé en direct" }
+    },
+    "pros": ["Filiale BNP (solidité et garantie)", "Bourse accessible dès 1€", "Compte courant gratuit"],
+    "cons": ["Innovation plus lente", "Frais courtage légèrement plus élevés que Boursobank"],
+    "rating": 3.8
+  },
+  {
+    "id": "monabanq",
+    "name": "Monabanq",
+    "type": "banque-en-ligne",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": true, "fees": 0, "notes": "" },
+      "ldds": { "available": true, "fees": 0, "notes": "" },
+      "pea": { "available": false, "notes": "PEA non disponible" },
+      "cto": { "available": false, "notes": "CTO non disponible" },
+      "assurance_vie": {
+        "available": true,
+        "entryFees": 0,
+        "managementFees": 0.75,
+        "arbitrageFees": 0,
+        "notes": "Suravenir Opportunités via partenariat"
+      },
+      "per": {
+        "available": true,
+        "entryFees": 0,
+        "managementFees": 0.6,
+        "notes": "PER Individuel — bonne gestion pilotée"
+      }
+    },
+    "pros": ["Service client reconnu", "Gestion budget intégrée", "PER compétitif"],
+    "cons": ["Pas de PEA", "Pas de CTO", "Peu orientée investissement bourse"],
+    "rating": 3.8
+  },
+  {
+    "id": "orange-bank",
+    "name": "Orange Bank",
+    "type": "banque-en-ligne",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": true, "fees": 0, "notes": "" },
+      "ldds": { "available": false, "notes": "Non disponible" },
+      "pea": { "available": false, "notes": "Non disponible" },
+      "cto": { "available": false, "notes": "Non disponible" },
+      "assurance_vie": { "available": false, "notes": "Non disponible" },
+      "per": { "available": false, "notes": "Non disponible" }
+    },
+    "pros": ["Application simple", "Offre bancaire de base"],
+    "cons": ["Offre épargne très limitée", "Pas de produits d'investissement", "Avenir incertain (filiale Orange)"],
+    "rating": 2.5
+  },
+  {
+    "id": "trade-republic",
+    "name": "Trade Republic",
+    "type": "courtier",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": false, "notes": "Fintech allemande — pas de livrets français" },
+      "ldds": { "available": false, "notes": "" },
+      "pea": { "available": false, "notes": "Pas de statut bancaire français — PEA impossible" },
+      "cto": {
+        "available": true,
+        "orderFees": 1.0,
+        "custodyFees": 0,
+        "minOrder": 1,
+        "notes": "1€ fixe par ordre. Investissement fractionné à partir de 1€."
+      },
+      "assurance_vie": { "available": false, "notes": "Non disponible" },
+      "per": { "available": false, "notes": "Non disponible" }
+    },
+    "pros": ["1€ fixe par ordre (très compétitif)", "Investissement fractionné", "Interface ultra-simple", "Compte épargne 3,75% (plafonné)"],
+    "cons": ["Pas de PEA", "Pas d'assurance-vie", "Fintech, pas banque française traditionnelle"],
+    "rating": 4.0
+  },
+  {
+    "id": "degiro",
+    "name": "Degiro",
+    "type": "courtier",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": false, "notes": "" },
+      "ldds": { "available": false, "notes": "" },
+      "pea": { "available": false, "notes": "Pas de PEA — courtier néerlandais" },
+      "cto": {
+        "available": true,
+        "orderFees": 0,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "ETFs sélectionnés gratuits/mois. Sinon 2€ + 0,02% par ordre."
+      },
+      "assurance_vie": { "available": false, "notes": "" },
+      "per": { "available": false, "notes": "" }
+    },
+    "pros": ["ETFs gratuits du mois", "Large accès aux marchés mondiaux", "Frais très faibles"],
+    "cons": ["Pas de PEA", "Prêt de titres activé par défaut", "Interface moins intuitive"],
+    "rating": 4.0
+  },
+  {
+    "id": "saxo-bank",
+    "name": "Saxo Bank",
+    "type": "courtier",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": false, "notes": "" },
+      "ldds": { "available": false, "notes": "" },
+      "pea": {
+        "available": true,
+        "orderFees": 3.0,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "PEA Classic — accès complet à la plateforme pro"
+      },
+      "cto": {
+        "available": true,
+        "orderFees": 3.0,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "Options, futures, CFD, matières premières disponibles"
+      },
+      "assurance_vie": { "available": false, "notes": "" },
+      "per": { "available": false, "notes": "" }
+    },
+    "pros": ["Accès mondial (30 000+ instruments)", "Produits complexes (options, futures)", "Plateforme pro SaxoTrader"],
+    "cons": ["Frais élevés vs concurrence", "Complexe pour débutants", "Dépôt minimum 500€"],
+    "rating": 3.5
+  },
+  {
+    "id": "bourse-direct",
+    "name": "Bourse Direct",
+    "type": "courtier",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": false, "notes": "" },
+      "ldds": { "available": false, "notes": "" },
+      "pea": {
+        "available": true,
+        "orderFees": 0.99,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "0,99€ par ordre < 500€, puis 0,20% — parmi les moins chers du marché"
+      },
+      "cto": {
+        "available": true,
+        "orderFees": 0.99,
+        "custodyFees": 0,
+        "minOrder": 0,
+        "notes": "Mêmes tarifs que le PEA"
+      },
+      "assurance_vie": {
+        "available": true,
+        "entryFees": 0,
+        "managementFees": 0.6,
+        "arbitrageFees": 0,
+        "notes": "Linxea Spirit via partenariat — excellent contrat"
+      },
+      "per": {
+        "available": true,
+        "entryFees": 0,
+        "managementFees": 0.5,
+        "notes": "PER Linxea Spirit 2"
+      }
+    },
+    "pros": ["Courtage très compétitif", "PEA + CTO + AV + PER", "Partenariat Linxea excellent"],
+    "cons": ["Interface datée", "Moins connue du grand public"],
+    "rating": 4.1
+  },
+  {
+    "id": "bnp-paribas",
+    "name": "BNP Paribas",
+    "type": "banque-traditionnelle",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": true, "fees": 0, "notes": "" },
+      "ldds": { "available": true, "fees": 0, "notes": "" },
+      "pea": {
+        "available": true,
+        "orderFees": 5.0,
+        "custodyFees": 0.45,
+        "minOrder": 5,
+        "notes": "Frais de garde 0,45%/an. Offre limitée en ETF."
+      },
+      "cto": {
+        "available": true,
+        "orderFees": 5.0,
+        "custodyFees": 0.45,
+        "minOrder": 5,
+        "notes": ""
+      },
+      "assurance_vie": {
+        "available": true,
+        "entryFees": 2.0,
+        "managementFees": 1.0,
+        "arbitrageFees": 0.5,
+        "notes": "BNP Paribas Multiplacements — frais d'entrée négociables en agence"
+      },
+      "per": {
+        "available": true,
+        "entryFees": 2.0,
+        "managementFees": 1.0,
+        "notes": "PER Individuel BNP Paribas"
+      }
+    },
+    "pros": ["Réseau d'agences dense", "Conseil personnalisé", "Solidité financière (banque systémique)"],
+    "cons": ["Frais très élevés vs banques en ligne", "Frais de garde PEA/CTO", "Interface en ligne vieillissante"],
+    "rating": 2.5
+  },
+  {
+    "id": "societe-generale",
+    "name": "Société Générale",
+    "type": "banque-traditionnelle",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": true, "fees": 0, "notes": "" },
+      "ldds": { "available": true, "fees": 0, "notes": "" },
+      "pea": {
+        "available": true,
+        "orderFees": 5.5,
+        "custodyFees": 0.5,
+        "minOrder": 5,
+        "notes": "Frais de garde 0,50%/an — parmi les plus élevés"
+      },
+      "cto": {
+        "available": true,
+        "orderFees": 5.5,
+        "custodyFees": 0.5,
+        "minOrder": 5,
+        "notes": ""
+      },
+      "assurance_vie": {
+        "available": true,
+        "entryFees": 3.0,
+        "managementFees": 1.0,
+        "arbitrageFees": 0.5,
+        "notes": "Sogecap — frais d'entrée parmi les plus élevés du marché"
+      },
+      "per": {
+        "available": true,
+        "entryFees": 3.0,
+        "managementFees": 1.0,
+        "notes": ""
+      }
+    },
+    "pros": ["Réseau national capillaire", "Gamme de produits complète", "Banque de détail reconnue"],
+    "cons": ["Frais parmi les plus élevés", "Interface web dépassée", "Peu compétitif pour l'investissement autonome"],
+    "rating": 2.3
+  },
+  {
+    "id": "credit-agricole",
+    "name": "Crédit Agricole",
+    "type": "banque-traditionnelle",
+    "logo": null,
+    "envelopes": {
+      "livret_a": { "available": true, "fees": 0, "notes": "" },
+      "ldds": { "available": true, "fees": 0, "notes": "" },
+      "pea": {
+        "available": true,
+        "orderFees": 6.0,
+        "custodyFees": 0.4,
+        "minOrder": 5,
+        "notes": "Tarifs variables selon les caisses régionales"
+      },
+      "cto": {
+        "available": true,
+        "orderFees": 6.0,
+        "custodyFees": 0.4,
+        "minOrder": 5,
+        "notes": ""
+      },
+      "assurance_vie": {
+        "available": true,
+        "entryFees": 2.5,
+        "managementFees": 0.95,
+        "arbitrageFees": 0.5,
+        "notes": "Predica — plusieurs contrats selon la caisse régionale"
+      },
+      "per": {
+        "available": true,
+        "entryFees": 2.5,
+        "managementFees": 0.9,
+        "notes": "Plan d'Épargne Retraite CA — gestion pilotée disponible"
+      }
+    },
+    "pros": ["Plus grande banque française", "Forte présence rurale", "Modèle mutualiste"],
+    "cons": ["Frais élevés", "Tarifs variables selon région", "Service en ligne limité"],
+    "rating": 2.4
+  }
+]

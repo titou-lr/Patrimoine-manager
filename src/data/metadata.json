@@ -1,0 +1,58 @@
+{
+  "categories": {
+    "ETF": {
+      "lastUpdated": null,
+      "source": "Yahoo Finance (non-officiel)",
+      "fetchable": true,
+      "description": "Prix récupérés via Yahoo Finance. Aucune clé API requise."
+    },
+    "Livrets": {
+      "lastUpdated": null,
+      "source": "Statique — taux Banque de France",
+      "fetchable": false,
+      "description": "Taux réglementés, mis à jour manuellement lors des révisions (janv./juil.)."
+    },
+    "Fonds euros": {
+      "lastUpdated": null,
+      "source": "Statique — moyennes marché",
+      "fetchable": false,
+      "description": "Moyenne des fonds euros publiée annuellement par les assureurs."
+    },
+    "Obligations": {
+      "lastUpdated": null,
+      "source": "Yahoo Finance (non-officiel)",
+      "fetchable": true,
+      "description": "Taux OAT et prix ETF obligations récupérés via Yahoo Finance."
+    },
+    "Immobilier": {
+      "lastUpdated": null,
+      "source": "Statique — moyennes ASPIM/IEIF",
+      "fetchable": false,
+      "description": "Taux de distribution SCPI publiés annuellement par l'ASPIM."
+    },
+    "Crypto": {
+      "lastUpdated": null,
+      "source": "CoinGecko API v3 (gratuit, sans clé)",
+      "fetchable": true,
+      "description": "Prix et variation 24h en EUR via CoinGecko public API."
+    },
+    "Actions": {
+      "lastUpdated": null,
+      "source": "Yahoo Finance (non-officiel)",
+      "fetchable": true,
+      "description": "Cotations en temps différé (~15 min) via Yahoo Finance."
+    },
+    "Or": {
+      "lastUpdated": null,
+      "source": "Yahoo Finance (non-officiel)",
+      "fetchable": true,
+      "description": "Prix de l'or en USD/oz converti en EUR."
+    },
+    "Monétaire": {
+      "lastUpdated": null,
+      "source": "Statique — taux ESTER/moyennes marché",
+      "fetchable": false,
+      "description": "Rendements approximatifs, liés au taux directeur BCE."
+    }
+  }
+}
