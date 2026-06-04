@@ -5,6 +5,7 @@
 
 import type { Envelope, GlobalParams, SimulationResult, TaxProfile } from '../types'
 import { formatEur } from '../utils/format'
+import { PS_RATE } from './taxation'
 
 export interface OptimizationSuggestion {
   id: string
@@ -20,7 +21,6 @@ export interface OptimizationSuggestion {
   patch?: { envelopeId: string; monthlyContribution: number }
 }
 
-const PS_RATE = 0.172
 const FLAT_TAX = 0.30
 
 export function analyzeTaxOptimization(
