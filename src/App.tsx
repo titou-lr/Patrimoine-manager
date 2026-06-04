@@ -15,7 +15,7 @@ import {
   markProfileOnboarded,
 } from './profiles/profileService'
 import EnvelopeTypeSelector from './components/inputs/EnvelopeTypeSelector'
-import CapOverflowModal, { type EnvelopeCapUpdate } from './components/inputs/CapOverflowModal'
+import CapOverflowModal, { type CapRedirectChoice } from './components/inputs/CapOverflowModal'
 import { createEnvelopeFromPreset } from './data/envelopePresets'
 import SimulationComparePanel from './components/results/SimulationComparePanel'
 import DashboardPage from './components/pages/DashboardPage'
@@ -368,17 +368,9 @@ export default function App() {
     }, 0)
   }
 
-  function handleCapModalApply(updates: EnvelopeCapUpdate[]) {
-    for (const upd of updates) {
-      if (upd.action === 'stop') {
-        updateEnvelope(upd.sourceEnvelopeId, { monthlyContribution: 0 })
-      } else if (upd.action === 'redirect' && upd.targetEnvelopeId) {
-        updateEnvelope(upd.sourceEnvelopeId, { monthlyContribution: 0 })
-        const capYear = capReachedByEnvelope[upd.sourceEnvelopeId] ?? 0
-        updateEnvelope(upd.targetEnvelopeId, {
-          contributionRedirectFrom: { year: capYear, extraMonthly: upd.amount },
-        })
-      }
+  function handleCapModalApply(choices: CapRedirectChoice[]) {
+    for (const c of choices) {
+      updateEnvelope(c.envelopeId, { capRedirectTo: c.capRedirectTo })
     }
     setCapModalOpen(false)
     setCapModalDismissed(true)
@@ -630,7 +622,6 @@ export default function App() {
         <CapOverflowModal
           capReachedByEnvelope={capReachedByEnvelope}
           envelopes={envelopes}
-          lastResults={runState.results.length > 0 ? runState.results[runState.results.length - 1] : null}
           onApply={handleCapModalApply}
           onClose={() => { setCapModalOpen(false); setCapModalDismissed(true) }}
         />

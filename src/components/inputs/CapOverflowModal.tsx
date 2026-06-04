@@ -1,18 +1,15 @@
 import { useState } from 'react'
-import type { Envelope, SimulationResult } from '../../types'
+import type { Envelope } from '../../types'
 
-export interface EnvelopeCapUpdate {
-  sourceEnvelopeId: string
-  action: 'stop' | 'redirect'
-  targetEnvelopeId?: string
-  amount: number
+export interface CapRedirectChoice {
+  envelopeId: string
+  capRedirectTo?: string  // undefined = arrêter sans redirection
 }
 
 interface Props {
   capReachedByEnvelope: Record<string, number>
   envelopes: Envelope[]
-  lastResults: SimulationResult | null
-  onApply: (updates: EnvelopeCapUpdate[]) => void
+  onApply: (choices: CapRedirectChoice[]) => void
   onClose: () => void
 }
 
@@ -22,32 +19,26 @@ export default function CapOverflowModal({
   const cappedEnvelopes = envelopes.filter(e => capReachedByEnvelope[e.id] !== undefined)
   const otherEnvelopes = envelopes.filter(e => e.active && capReachedByEnvelope[e.id] === undefined)
 
-  const [choices, setChoices] = useState<Record<string, { action: 'stop' | 'redirect'; targetId: string }>>(() => {
-    const init: Record<string, { action: 'stop' | 'redirect'; targetId: string }> = {}
+  const [choices, setChoices] = useState<Record<string, { redirect: boolean; targetId: string }>>(() => {
+    const init: Record<string, { redirect: boolean; targetId: string }> = {}
     for (const env of cappedEnvelopes) {
-      init[env.id] = { action: 'stop', targetId: otherEnvelopes[0]?.id ?? '' }
+      init[env.id] = {
+        redirect: !!env.capRedirectTo,
+        targetId: env.capRedirectTo ?? otherEnvelopes[0]?.id ?? '',
+      }
     }
     return init
   })
 
-  function setAction(envId: string, action: 'stop' | 'redirect') {
-    setChoices(c => ({ ...c, [envId]: { ...c[envId], action } }))
-  }
-  function setTarget(envId: string, targetId: string) {
-    setChoices(c => ({ ...c, [envId]: { ...c[envId], targetId } }))
-  }
-
   function handleApply() {
-    const updates: EnvelopeCapUpdate[] = cappedEnvelopes.map(env => {
+    const result: CapRedirectChoice[] = cappedEnvelopes.map(env => {
       const ch = choices[env.id]
       return {
-        sourceEnvelopeId: env.id,
-        action: ch.action,
-        targetEnvelopeId: ch.action === 'redirect' ? ch.targetId : undefined,
-        amount: env.monthlyContribution,
+        envelopeId: env.id,
+        capRedirectTo: ch.redirect && ch.targetId ? ch.targetId : undefined,
       }
     })
-    onApply(updates)
+    onApply(result)
   }
 
   return (
@@ -55,7 +46,7 @@ export default function CapOverflowModal({
       <div
         onMouseDown={e => e.stopPropagation()}
         style={{
-          width: 520, maxWidth: '95vw', maxHeight: '80vh', overflow: 'auto',
+          width: 480, maxWidth: '95vw', maxHeight: '80vh', overflow: 'auto',
           background: 'var(--surface-2)', border: '1px solid var(--hairline-strong)',
           borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-pop)',
           animation: 'pop .18s var(--ease)',
@@ -73,12 +64,12 @@ export default function CapOverflowModal({
             </button>
           </div>
           <p className="caption" style={{ marginTop: 4 }}>
-            Ces enveloppes ont atteint leur plafond légal de versement. Choisissez ce qu'il faut faire du montant mensuel orphelin.
+            Choisissez où rediriger les versements de chaque enveloppe plafonnée.
           </p>
         </div>
 
         {/* Corps */}
-        <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {cappedEnvelopes.map(env => {
             const year = capReachedByEnvelope[env.id]
             const ch = choices[env.id]
@@ -87,36 +78,32 @@ export default function CapOverflowModal({
                 <div className="row gap8" style={{ marginBottom: 10, alignItems: 'baseline' }}>
                   <span className="subhead" style={{ fontSize: 13 }}>{env.label}</span>
                   <span className="badge">Plafond atteint an {year + 1}</span>
-                  <div className="grow" />
-                  <span className="mono small muted">{env.monthlyContribution} €/mois orphelins</span>
                 </div>
 
                 <div className="col gap8">
-                  {/* Option stop */}
                   <label className="row gap8" style={{ alignItems: 'center', cursor: 'pointer' }}>
                     <input
-                      type="radio" name={`action-${env.id}`}
-                      checked={ch.action === 'stop'}
-                      onChange={() => setAction(env.id, 'stop')}
+                      type="radio" name={`redirect-${env.id}`}
+                      checked={!ch.redirect}
+                      onChange={() => setChoices(c => ({ ...c, [env.id]: { ...c[env.id], redirect: false } }))}
                       style={{ accentColor: 'var(--primary)', flexShrink: 0 }}
                     />
                     <span className="small">Arrêter les versements</span>
                   </label>
 
-                  {/* Option redirect */}
                   <label className="row gap8" style={{ alignItems: 'center', cursor: 'pointer' }}>
                     <input
-                      type="radio" name={`action-${env.id}`}
-                      checked={ch.action === 'redirect'}
-                      onChange={() => setAction(env.id, 'redirect')}
+                      type="radio" name={`redirect-${env.id}`}
+                      checked={ch.redirect}
+                      onChange={() => setChoices(c => ({ ...c, [env.id]: { ...c[env.id], redirect: true } }))}
                       disabled={otherEnvelopes.length === 0}
                       style={{ accentColor: 'var(--primary)', flexShrink: 0 }}
                     />
                     <span className="small">Rediriger vers</span>
-                    {ch.action === 'redirect' && otherEnvelopes.length > 0 && (
+                    {ch.redirect && otherEnvelopes.length > 0 && (
                       <select
                         value={ch.targetId}
-                        onChange={e => setTarget(env.id, e.target.value)}
+                        onChange={e => setChoices(c => ({ ...c, [env.id]: { ...c[env.id], targetId: e.target.value } }))}
                         onClick={e => e.stopPropagation()}
                         style={{
                           height: 28, padding: '0 8px', fontSize: 12,
@@ -131,7 +118,7 @@ export default function CapOverflowModal({
                     )}
                     {otherEnvelopes.length === 0 && (
                       <span className="caption" style={{ color: 'var(--ink-tertiary)' }}>
-                        (aucune autre enveloppe active disponible)
+                        (aucune autre enveloppe active)
                       </span>
                     )}
                   </label>
@@ -143,11 +130,9 @@ export default function CapOverflowModal({
 
         {/* Footer */}
         <div className="row gap8" style={{ padding: '12px 20px', borderTop: '1px solid var(--hairline)', justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary btn-sm" onClick={onClose}>
-            Fermer sans modifier
-          </button>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}>Fermer</button>
           <button className="btn btn-primary btn-sm" onClick={handleApply}>
-            Appliquer et relancer la simulation
+            Appliquer et relancer
           </button>
         </div>
       </div>

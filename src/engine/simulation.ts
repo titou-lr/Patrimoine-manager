@@ -65,23 +65,23 @@ function weightedAnnualReturn(envelope: Envelope): number {
 /**
  * Simule une enveloppe mois par mois sur toute la durée.
  *
- * Nouveautés v2 :
- *  - Plafonds versements (maxContribution)
- *  - Dividendes CTO taxés en décembre
- *  - Économie fiscale PER par année
- *  - Versements cumulés en euros constants (Fisher)
- *  - Fiscalité via computeTax() — aucune constante fiscale ici
+ * Ordre de résolution par mois :
+ *  1. Calculer le versement de base (monthlyContribution × fréquence)
+ *  2. Appliquer les effets d'événements de vie → ownBase
+ *  3. Ajouter l'éventuel surplus redirigé depuis d'autres enveloppes (extraContribPerMonth)
+ *  4. Appliquer le plafond légal → monthlyGross, surplus = ce qui n'a pas pu être versé
+ *  5. Appliquer les frais, puis les intérêts composés
  *
- * Nouveautés v3 (Feature 4) :
- *  - Événements de vie via effectsMap (pause, windfall, withdrawal, delta contribution)
+ * Retourne les résultats annuels ET la map surplus par mois (pour capRedirectTo).
  */
 function simulateEnvelope(
   envelope: Envelope,
   years: number,
   inflationRate: number,
   taxProfile: TaxProfile,
-  effectsMap: Map<number, EnvelopeEffect> = new Map()
-): EnvelopeResult[] {
+  effectsMap: Map<number, EnvelopeEffect> = new Map(),
+  extraContribPerMonth: Map<number, number> = new Map()
+): { results: EnvelopeResult[]; surplusPerMonth: Map<number, number> } {
   const monthlyRate = weightedAnnualReturn(envelope) / MONTHS_PER_YEAR
   const fees = envelope.fees ?? ZERO_FEES
   const isOrderBased = envelope.type === 'pea' || envelope.type === 'cto'
@@ -107,6 +107,7 @@ function simulateEnvelope(
   let contribRealValueAccum = 0
 
   const results: EnvelopeResult[] = []
+  const surplusPerMonth = new Map<number, number>()
 
   for (let y = 1; y <= years; y++) {
     let annualPerTaxSavings = 0
@@ -115,48 +116,52 @@ function simulateEnvelope(
     for (let m = 1; m <= MONTHS_PER_YEAR; m++) {
       const globalMonth = (y - 1) * MONTHS_PER_YEAR + m
       const effect = effectsMap.get(globalMonth)
+      const extraContrib = extraContribPerMonth.get(globalMonth) ?? 0
 
       // ── Fréquence de versement + horizon de clôture ───────────────────────
       let freqActive = !isClosed
       if (freqActive && freq === 'quarterly') freqActive = m % 3 === 0
       if (freqActive && freq === 'annual') freqActive = m === 1
 
-      let baseAmount = freq === 'quarterly'
+      const baseAmount = freq === 'quarterly'
         ? envelope.monthlyContribution * 3
         : freq === 'annual'
         ? envelope.monthlyContribution * 12
         : envelope.monthlyContribution
 
-      // contributionRedirectFrom : extra versement à partir d'une année pivot
-      if (envelope.contributionRedirectFrom && freqActive && (y - 1) >= envelope.contributionRedirectFrom.year) {
-        const mult = freq === 'quarterly' ? 3 : freq === 'annual' ? 12 : 1
-        baseAmount += envelope.contributionRedirectFrom.extraMonthly * mult
+      // ── 1. Versement prévu (événements de vie appliqués EN PREMIER) ────────
+      let ownBase: number
+      if (!freqActive) {
+        ownBase = 0
+      } else if (effect?.contributionMultiplier === 0) {
+        ownBase = 0
+      } else if (effect) {
+        ownBase = Math.max(0, baseAmount * effect.contributionMultiplier + effect.contributionDelta)
+      } else {
+        ownBase = baseAmount
       }
 
-      // ── Plafond versements ────────────────────────────────────────────────
+      // ── 2. Plafond versements — surplus = part écrêtée du versement propre ─
       let monthlyGross: number
-      if (isCapped || !freqActive) {
+      if (isCapped) {
         monthlyGross = 0
+        if (ownBase > 0) surplusPerMonth.set(globalMonth, ownBase)
       } else {
         const available = maxCont - totalContributed
+        const totalIntended = ownBase + extraContrib
         if (available <= 0) {
           monthlyGross = 0
-          if (!isCapped) { isCapped = true; capFirstYear = y - 1 }
-        } else if (baseAmount > available) {
-          monthlyGross = available
-          if (!isCapped) { isCapped = true; capFirstYear = y - 1 }
+          if (ownBase > 0) surplusPerMonth.set(globalMonth, ownBase)
+          isCapped = true
+          if (capFirstYear === undefined) capFirstYear = y - 1
         } else {
-          monthlyGross = baseAmount
-        }
-      }
-
-      // ── Événements de vie : pause + delta contribution ─────────────────────
-      if (effect) {
-        if (effect.contributionMultiplier === 0) {
-          monthlyGross = 0
-        } else {
-          // Apply contribution delta (expense_increase, salary_increase, custom)
-          monthlyGross = Math.max(0, monthlyGross * effect.contributionMultiplier + effect.contributionDelta)
+          monthlyGross = Math.min(totalIntended, available)
+          const surplus = ownBase - Math.max(0, monthlyGross - extraContrib)
+          if (surplus > 0) surplusPerMonth.set(globalMonth, surplus)
+          if (totalIntended >= available) {
+            isCapped = true
+            if (capFirstYear === undefined) capFirstYear = y - 1
+          }
         }
       }
 
@@ -247,7 +252,7 @@ function simulateEnvelope(
     })
   }
 
-  return results
+  return { results, surplusPerMonth }
 }
 
 // ─── Export public ────────────────────────────────────────────────────────────
@@ -303,16 +308,50 @@ export function runSimulation(
     }
   }
 
-  // Simulation par enveloppe
-  const byEnvelopeTimeSeries: Record<string, EnvelopeResult[]> = {}
+  // Passe 1 : simuler toutes les enveloppes, collecter les surplus des sources capRedirectTo
+  const rawSeries: Record<string, { results: EnvelopeResult[]; surplusPerMonth: Map<number, number> }> = {}
   for (const env of active) {
-    byEnvelopeTimeSeries[env.id] = simulateEnvelope(
+    rawSeries[env.id] = simulateEnvelope(
       env,
       params.duration,
       adjustedInflation,
       taxProfile,
       effectsMaps.get(env.id) ?? new Map()
     )
+  }
+
+  // Construire les extra-contributions mensuelles pour les enveloppes cibles
+  const extraContribsByTarget: Record<string, Map<number, number>> = {}
+  for (const env of active) {
+    if (!env.capRedirectTo) continue
+    const { surplusPerMonth } = rawSeries[env.id]
+    if (surplusPerMonth.size === 0) continue
+    if (!extraContribsByTarget[env.capRedirectTo]) {
+      extraContribsByTarget[env.capRedirectTo] = new Map()
+    }
+    for (const [month, surplus] of surplusPerMonth) {
+      const prev = extraContribsByTarget[env.capRedirectTo].get(month) ?? 0
+      extraContribsByTarget[env.capRedirectTo].set(month, prev + surplus)
+    }
+  }
+
+  // Passe 2 : re-simuler les enveloppes cibles avec les surplus reçus
+  const byEnvelopeTimeSeries: Record<string, EnvelopeResult[]> = {}
+  for (const env of active) {
+    const extra = extraContribsByTarget[env.id]
+    if (extra && extra.size > 0) {
+      const { results } = simulateEnvelope(
+        env,
+        params.duration,
+        adjustedInflation,
+        taxProfile,
+        effectsMaps.get(env.id) ?? new Map(),
+        extra
+      )
+      byEnvelopeTimeSeries[env.id] = results
+    } else {
+      byEnvelopeTimeSeries[env.id] = rawSeries[env.id].results
+    }
   }
 
   // Agrégation annuelle

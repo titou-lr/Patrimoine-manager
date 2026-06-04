@@ -176,11 +176,8 @@ export interface Envelope {
   reinvestDividends?: boolean
   /** Dividendes mensuels estimés (utilisé seulement si reinvestDividends = false) */
   estimatedMonthlyDividends?: number
-  /** Versement supplémentaire conditionnel à partir d'une année pivot (redirection de cap) */
-  contributionRedirectFrom?: {
-    year: number        // année 0-based à partir de laquelle ajouter extraMonthly
-    extraMonthly: number // montant mensuel supplémentaire en €
-  }
+  /** ID de l'enveloppe vers laquelle rediriger les versements excédentaires quand le plafond est atteint */
+  capRedirectTo?: string
 }
 
 /** Paramètres globaux de la simulation */
