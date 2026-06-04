@@ -25,11 +25,16 @@ jobs:
         run: npm ci
 
       - name: Sync version from tag
-        # Retire le préfixe "v" du tag (v1.2.3 → 1.2.3) et met à jour package.json
+        # Retire le préfixe "v" du tag (v1.2.3 → 1.2.3) et écrit directement dans package.json
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          npm version "$VERSION" --no-git-tag-version
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${VERSION}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
 
       - name: Build Windows installer
         run: npm run electron:build
