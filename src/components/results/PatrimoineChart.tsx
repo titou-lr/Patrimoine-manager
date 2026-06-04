@@ -138,7 +138,6 @@ export default function PatrimoineChart({ results, envelopes, events = [], monte
         <ComposedChart
           data={isAdvanced ? chartMcData : chartData}
           margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
-          overflow="hidden"
         >
           <CartesianGrid stroke={CHART_GRID} strokeDasharray="1 0" vertical={false} />
           <XAxis
