@@ -1,7 +1,8 @@
 # CLAUDE.md — Simulateur de Patrimoine
 
 ## Projet
-App web locale (pas de backend, pas de GitHub) pour simuler l'évolution d'un patrimoine financier multi-enveloppes sur le long terme. Développement en VS Code.
+App web locale (pas de backend) pour simuler l'évolution d'un patrimoine financier multi-enveloppes sur le long terme. Développement en VS Code.
+Repo Git : `git@github.com:titou-lr/Patrimoine-manager.git`
 
 ## Stack
 - **React 19** + **Vite 8** (bundler rapide, HMR)
@@ -59,31 +60,25 @@ patrimoine-sim/
     │   │   ├── SimulationTabs.tsx    # Onglets simulations (desktop)
     │   │   └── SimulationDropdown.tsx # Sélecteur simulation (mobile/header)
     │   ├── pages/
-    │   │   ├── DashboardPage.tsx    # Page résultats — KPIs, 7 onglets graphiques, SmartAlerts, HistoryPanel
-    │   │   └── EnvelopesPage.tsx    # Page config enveloppes — grille + bande params + bouton Run
+    │   │   ├── DashboardPage.tsx    # Page résultats — KPIs, 8 onglets graphiques, SmartAlerts, HistoryPanel
+    │   │   └── EnvelopesPage.tsx    # Page config enveloppes — grille + chips params + bouton Run
     │   ├── profiles/
     │   │   ├── ProfileScreen.tsx     # Écran sélection profil (Netflix-style)
-    │   │   ├── CreateProfileModal.tsx # Modal création profil 2 étapes
-    │   │   └── ProfileMenu.tsx       # Dropdown header (legacy, remplacé par ProfileDropdown inline dans App.tsx)
+    │   │   └── CreateProfileModal.tsx # Modal création profil 2 étapes
     │   ├── inputs/
-    │   │   ├── GlobalParams.tsx      # (legacy) — remplacé par GlobalParamsBand
-    │   │   ├── GlobalParamsBand.tsx  # Bande paramètres globaux + bouton Lancer (EnvelopesPage)
+    │   │   ├── GlobalParamsBand.tsx  # Bande paramètres globaux (non câblée — EnvelopesPage a ses propres chips)
     │   │   ├── EnvelopeCard.tsx      # Carte enveloppe pliable — orchestre les sections ci-dessous
     │   │   ├── EnvelopeMetaSection.tsx     # Métadonnées — label, date ouverture, horizon, objectif
     │   │   ├── EnvelopeProjectionSection.tsx # Versements — montant, fréquence, mode euros/%, dividendes
     │   │   ├── EnvelopeAssetsFees.tsx      # Actifs + frais — tableau actifs, import frais banque
     │   │   ├── EnvelopeTaxInfo.tsx         # Infobande fiscale résumée par enveloppe
     │   │   ├── EnvelopeTypeSelector.tsx    # Modal choix type enveloppe (grilles par groupe)
-    │   │   ├── AllocationRow.tsx      # Ligne actif (nom, rendement, allocation %)
-    │   │   └── NumberInput.tsx        # (dans ui/) Input numérique avec min/max, suffix, font-mono
+    │   │   └── AllocationRow.tsx      # Ligne actif (nom, rendement, allocation %)
     │   ├── results/
-    │   │   ├── SummaryCards.tsx      # KPIs héros (capital, valeur réelle, gains)
     │   │   ├── PatrimoineChart.tsx   # AreaChart empilé par enveloppe + ligne réelle
-    │   │   ├── BreakdownTable.tsx    # Tableau détail par enveloppe (sélecteur année)
     │   │   ├── InflationChart.tsx    # AreaChart valeur réelle + érosion inflation
     │   │   ├── AllocationPieChart.tsx # Donut répartition patrimoine (sélecteur année)
-    │   │   ├── MilestonePanel.tsx    # Jalons 100k/500k/1M avec progression
-    │   │   ├── FeesImpactChart.tsx   # AreaChart avec/sans frais — impact cumulé
+    │   │   ├── FeesImpactChart.tsx   # AreaChart avec/sans frais — impact cumulé (onglet fees)
     │   │   ├── RetirementPanel.tsx   # Paramètres + KPIs retraite
     │   │   ├── RetirementDualChart.tsx # Graphique accumulation + retrait
     │   │   ├── RealEstatePanel.tsx   # Simulateur immobilier (prêt, apport, mensualité)
@@ -97,15 +92,9 @@ patrimoine-sim/
     │   │   └── HistoryPanel.tsx      # Suivi réel — saisie valeurs historiques + LineChart vs simulation
     │   ├── tools/
     │   │   ├── LifeEvents.tsx        # Gestion événements de vie (CRUD, formulaire type/date/durée)
-    │   │   ├── BackwardCalculator.tsx # Calculateur inverse : cible → versement mensuel nécessaire
     │   │   └── TaxOptimizer.tsx      # Interface optimiseur fiscal — suggestions classées par économie
-    │   ├── compare/
-    │   │   └── StrategyComparator.tsx # Comparateur stratégies — LineChart multi-simulations recharts
     │   ├── alerts/
     │   │   └── SmartAlerts.tsx       # Panel alertes — liste prioritisée (P1 warnings, P2 tips, P3 infos)
-    │   ├── scenarios/
-    │   │   ├── ScenarioSelector.tsx  # Boutons pessimiste/réaliste/optimiste
-    │   │   └── ScenarioCompareChart.tsx # LineChart 3 scénarios superposés
     │   ├── data/
     │   │   ├── DataModal.tsx         # Modal OU page banque de données (3 onglets)
     │   │   ├── AssetsTab.tsx         # Tableau actifs avec filtres, tri, import
@@ -125,8 +114,7 @@ patrimoine-sim/
     │       └── GlossaryModal.tsx     # Modal glossaire complet — recherche + catégories
     └── utils/
         ├── format.ts                # formatEur(), formatPct()
-        ├── exportCSV.ts             # Export résultats en CSV
-        └── exportPDF.ts             # Impression navigateur (window.print)
+        └── exportCSV.ts             # Export résultats en CSV
 ```
 
 ## État actuel — Fonctionnalités implémentées
@@ -179,11 +167,6 @@ patrimoine-sim/
 - `HistoryPanel` superpose les points réels sur la courbe simulée (LineChart Recharts)
 - Stockés dans `Simulation.history: HistoryEntry[]`
 
-### Calculateur inverse (BackwardCalculator)
-- Formule PMT inverse : versement mensuel = f(capital cible, capital initial, rendement, durée)
-- Formule capital initial = f(cible, rendement, durée)
-- Bouton "Appliquer" → `onApply(monthlyAmount)` pour injecter dans les paramètres
-
 ### Enveloppes
 - 10 types de presets disponibles (via `envelopePresets.ts`)
 - Mode versement : montant fixe (€) ou part de l'effort total (%)
@@ -199,17 +182,17 @@ patrimoine-sim/
 - Modal de sélection du type d'enveloppe avec groupes (livrets / marché)
 
 ### Résultats — Dashboard
-- Vue globale : AreaChart empilé + impact frais + jalons + tableau détail
+- Vue globale : AreaChart empilé par enveloppe + ligne valeur réelle
+- Impact frais : graphique avec/sans frais, économie potentielle — onglet `'fees'`
 - Inflation : valeur réelle vs nominale (Fisher exact)
-- Répartition : donut par enveloppe (sélecteur année)
+- Répartition : donut par enveloppe + donut par classe d'actifs
 - Retraite : capital nécessaire, runway, graphique accumulation/retrait
 - Immobilier : simulateur prêt intégré
 - Capital : objectif avec horizon et versement supplémentaire nécessaire
 - Sécurité : fonds urgence, couverture passive, score 10 points
 - **Bilan net** : actifs vs passifs (dettes) sur la durée — onglet `'bilan_net'`
-- Comparaison 3 scénarios superposés (mode compareMode)
 - **SmartAlerts** : alertes contextuelles intégrées au dashboard
-- **HistoryPanel** : suivi réel vs simulation
+- **HistoryPanel** : suivi réel vs simulation (drawer)
 
 ### Fiscal
 - Module `taxation.ts` séparé — fonctions pures `computeTax()`, `taxPEA()`, `taxCTO()`, `taxAV()`, `taxPER()`
@@ -440,7 +423,7 @@ Sept fichiers purs dans `src/engine/` (zéro import React) :
 - **Importer `PS_RATE` depuis `taxation.ts`**, ne pas redéfinir
 
 ### Mode avancé (Monte-Carlo) — flux
-1. Toggle [Standard] | [Monte-Carlo] dans `GlobalParamsBand`
+1. Toggle [Standard] | [Monte-Carlo] dans le chip de mode d'`EnvelopesPage`
 2. `handleRunSimulation()` dans `App.tsx` : si `simulationMode === 'advanced'`, appelle `runMonteCarlo()` async
 3. `RunState.monteCarloResults?` stocke le `MonteCarloResult[]`
 4. `PatrimoineChart` passe en mode bandes P10/P50/P90 si `monteCarloResults` non vide
@@ -471,7 +454,7 @@ Les résultats de simulation ne sont **pas** recalculés en continu. Le flux est
 type AppPage = 'dashboard' | 'envelopes' | 'optimizer' | 'data'
 ```
 
-- **`'dashboard'`** → `DashboardPage` — résultats, 7 onglets, alertes, bilan
+- **`'dashboard'`** → `DashboardPage` — résultats, 8 onglets, alertes, bilan
 - **`'envelopes'`** → `EnvelopesPage` — config enveloppes + paramètres globaux
 - **`'optimizer'`** → `PortfolioOptimizer` — optimisation Black-Litterman/CVaR
 - **`'data'`** → `DataModal` rendu comme page (sans overlay) — actifs, banques, modèles
@@ -487,7 +470,7 @@ type AppPage = 'dashboard' | 'envelopes' | 'optimizer' | 'data'
 ## Dashboard — Onglets (`ChartTab`)
 
 ```ts
-type ChartTab = 'projection' | 'inflation' | 'retraite' | 'immobilier' | 'capital' | 'securite' | 'bilan_net'
+type ChartTab = 'projection' | 'inflation' | 'retraite' | 'immobilier' | 'capital' | 'securite' | 'bilan_net' | 'fees'
 ```
 
 | Onglet | Composant | Contenu |
@@ -499,6 +482,7 @@ type ChartTab = 'projection' | 'inflation' | 'retraite' | 'immobilier' | 'capita
 | Capital | CapitalPanel | Objectif + horizon |
 | Sécurité | SecurityPanel | Fonds urgence, score |
 | Bilan net | NetWorthPanel | Actifs vs dettes |
+| Impact frais | FeesImpactChart | Avec/sans frais, économie cumulée |
 
 ## Presets enveloppes (src/data/envelopePresets.ts)
 
