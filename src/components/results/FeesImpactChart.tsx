@@ -10,15 +10,16 @@ import {
 } from 'recharts'
 import { runSimulation, ZERO_FEES } from '../../engine/simulation'
 import { formatEur } from '../../utils/format'
-import type { Envelope, GlobalParams, SimulationResult } from '../../types'
+import type { Envelope, GlobalParams, LifeEvent, SimulationResult } from '../../types'
 
 interface Props {
   results: SimulationResult[]
   envelopes: Envelope[]
   globalParams: GlobalParams
+  events: LifeEvent[]
 }
 
-export default function FeesImpactChart({ results, envelopes, globalParams }: Props) {
+export default function FeesImpactChart({ results, envelopes, globalParams, events }: Props) {
   const lastResult = results[results.length - 1]
   if (!lastResult || lastResult.totalFeesPaid === 0) return null
 
@@ -28,8 +29,8 @@ export default function FeesImpactChart({ results, envelopes, globalParams }: Pr
   )
 
   const noFeesResults = useMemo(
-    () => runSimulation(noFeesEnvelopes, globalParams),
-    [noFeesEnvelopes, globalParams]
+    () => runSimulation(noFeesEnvelopes, globalParams, events),
+    [noFeesEnvelopes, globalParams, events]
   )
 
   const chartData = results.map((r, i) => ({
@@ -42,26 +43,25 @@ export default function FeesImpactChart({ results, envelopes, globalParams }: Pr
   const saving = noFeesLast ? Math.round(noFeesLast.totalNominal - lastResult.totalNominal) : 0
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-5">
-      <div className="flex items-start justify-between mb-4 gap-4">
+    <div>
+      <div className="spread" style={{ marginBottom: 16 }}>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Impact des frais</h3>
-          <p className="text-[11px] text-muted mt-0.5">Simulation avec vs sans frais</p>
+          <div className="small" style={{ color: 'var(--ink-secondary)' }}>Simulation avec vs sans frais</div>
         </div>
-        <div className="text-right shrink-0">
-          <div className="text-xs text-muted">Économie potentielle</div>
-          <div className="text-lg font-bold text-success">{formatEur(saving)}</div>
+        <div style={{ textAlign: 'right' }}>
+          <div className="caption" style={{ color: 'var(--ink-tertiary)' }}>Économie potentielle</div>
+          <div className="mono" style={{ fontSize: 16, fontWeight: 600, color: 'var(--success)' }}>{formatEur(saving)}</div>
         </div>
       </div>
 
-      <div className="flex gap-4 mb-3 text-[10px]">
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-2 rounded-sm bg-purple/60 inline-block" />
-          <span className="text-muted">Avec frais actuels</span>
+      <div className="row gap16" style={{ marginBottom: 12 }}>
+        <div className="row gap8" style={{ alignItems: 'center' }}>
+          <span style={{ width: 12, height: 8, borderRadius: 2, background: '#818cf8', opacity: 0.7, display: 'inline-block' }} />
+          <span className="caption" style={{ color: 'var(--ink-tertiary)' }}>Avec frais actuels</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-2 rounded-sm bg-danger/40 inline-block" />
-          <span className="text-muted">Coût des frais</span>
+        <div className="row gap8" style={{ alignItems: 'center' }}>
+          <span style={{ width: 12, height: 8, borderRadius: 2, background: '#f87171', opacity: 0.5, display: 'inline-block' }} />
+          <span className="caption" style={{ color: 'var(--ink-tertiary)' }}>Coût des frais</span>
         </div>
       </div>
 
@@ -123,7 +123,7 @@ export default function FeesImpactChart({ results, envelopes, globalParams }: Pr
         </AreaChart>
       </ResponsiveContainer>
 
-      <p className="text-[10px] text-muted/60 mt-2 text-center">
+      <p className="caption" style={{ color: 'var(--ink-tertiary)', marginTop: 8, textAlign: 'center', opacity: 0.7 }}>
         Le sommet de la zone rouge = capital sans frais. La zone rouge = manque à gagner cumulé.
       </p>
     </div>

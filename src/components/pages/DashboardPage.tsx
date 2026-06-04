@@ -12,9 +12,10 @@ import InflationChart from '../results/InflationChart'
 import SmartAlerts from '../alerts/SmartAlerts'
 import NetWorthPanel from '../networth/NetWorthPanel'
 import HistoryPanel from '../tracking/HistoryPanel'
+import FeesImpactChart from '../results/FeesImpactChart'
 import { PieChart, Pie, Cell } from 'recharts'
 
-type ChartTab = 'projection' | 'inflation' | 'retraite' | 'immobilier' | 'capital' | 'securite' | 'bilan_net'
+type ChartTab = 'projection' | 'inflation' | 'retraite' | 'immobilier' | 'capital' | 'securite' | 'bilan_net' | 'fees'
 
 const CHART_TABS: { id: ChartTab; label: string }[] = [
   { id: 'projection',  label: 'Projection' },
@@ -24,6 +25,7 @@ const CHART_TABS: { id: ChartTab; label: string }[] = [
   { id: 'capital',     label: 'Capital' },
   { id: 'securite',    label: 'Sécurité' },
   { id: 'bilan_net',   label: 'Bilan net' },
+  { id: 'fees',        label: 'Impact frais' },
 ]
 
 interface Props {
@@ -303,6 +305,7 @@ export default function DashboardPage({
                 : chartTab === 'immobilier' ? 'Simulateur immobilier'
                 : chartTab === 'capital' ? 'Objectif capital'
                 : chartTab === 'securite' ? 'Sécurité financière'
+                : chartTab === 'fees' ? 'Impact des frais'
                 : 'Bilan net de patrimoine'}
             </div>
             <div className="seg">
@@ -338,6 +341,9 @@ export default function DashboardPage({
           )}
           {chartTab === 'bilan_net' && (
             <NetWorthPanel results={results} globalParams={globalParams} />
+          )}
+          {chartTab === 'fees' && (
+            <FeesImpactChart results={results} envelopes={envelopes} globalParams={globalParams} events={events} />
           )}
         </div>
 
