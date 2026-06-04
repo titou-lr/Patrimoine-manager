@@ -66,7 +66,6 @@ patrimoine-sim/
     │   │   ├── ProfileScreen.tsx     # Écran sélection profil (Netflix-style)
     │   │   └── CreateProfileModal.tsx # Modal création profil 2 étapes
     │   ├── inputs/
-    │   │   ├── GlobalParamsBand.tsx  # Bande paramètres globaux (non câblée — EnvelopesPage a ses propres chips)
     │   │   ├── EnvelopeCard.tsx      # Carte enveloppe pliable — orchestre les sections ci-dessous
     │   │   ├── EnvelopeMetaSection.tsx     # Métadonnées — label, date ouverture, horizon, objectif
     │   │   ├── EnvelopeProjectionSection.tsx # Versements — montant, fréquence, mode euros/%, dividendes
