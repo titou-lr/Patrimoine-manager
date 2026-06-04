@@ -17,6 +17,7 @@ const TYPE_LABELS: Record<EnvelopeType, string> = {
 interface Props {
   envelope: Envelope
   onImportFees?: () => void
+  capReachedYear?: number
 }
 
 function SectionHeader({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
@@ -33,7 +34,7 @@ function SectionHeader({ label, open, onToggle }: { label: string; open: boolean
   )
 }
 
-export default function EnvelopeCard({ envelope, onImportFees }: Props) {
+export default function EnvelopeCard({ envelope, onImportFees, capReachedYear }: Props) {
   const { updateEnvelope, removeEnvelope } = useStore()
   const activeSim = useStore(selectActiveSim)
   const { globalParams } = activeSim
@@ -117,6 +118,19 @@ export default function EnvelopeCard({ envelope, onImportFees }: Props) {
           <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
+
+      {/* Banner plafond */}
+      {capReachedYear !== undefined && (
+        <div style={{
+          padding: '6px 16px', fontSize: 11,
+          background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
+          borderTop: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)',
+          color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          <span>⚠️</span>
+          <span>Plafond légal atteint en année {capReachedYear + 1} — versements automatiquement stoppés.</span>
+        </div>
+      )}
 
       {/* Body */}
       {expanded && (

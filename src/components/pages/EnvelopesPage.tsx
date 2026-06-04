@@ -139,9 +139,9 @@ function AssetRow({ a, hue, onOpen }: { a: Asset; hue: string; onOpen: () => voi
 
 // ── Group (envelope row) ──────────────────────────────────────────────────────
 
-function Group({ env, open, toggle, selected, onOpenDetail, effort }: {
+function Group({ env, open, toggle, selected, onOpenDetail, effort, capReachedYear }: {
   env: Envelope; open: boolean; toggle: () => void; selected: boolean
-  onOpenDetail: (id: string) => void; effort: number
+  onOpenDetail: (id: string) => void; effort: number; capReachedYear?: number
 }) {
   const { updateEnvelope } = useStore()
   const isActive = env.active !== false
@@ -159,6 +159,17 @@ function Group({ env, open, toggle, selected, onOpenDetail, effort }: {
       background: isActive ? 'var(--canvas)' : 'var(--surface)',
       opacity: isActive ? 1 : 0.7,
     }}>
+      {capReachedYear !== undefined && (
+        <div style={{
+          padding: '6px 12px',
+          background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
+          borderBottom: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)',
+          fontSize: 11, color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          <span>⚠️</span>
+          <span>Plafond légal atteint en année {capReachedYear + 1} — versements automatiquement stoppés.</span>
+        </div>
+      )}
       <div
         className="group-head"
         style={selected ? { background: 'var(--surface-2)' } : undefined}
@@ -577,10 +588,13 @@ interface Props {
   onImportFees: (envelopeId: string) => void
   onAddEnvelope: () => void
   onOpenData: () => void
+  capReachedByEnvelope?: Record<string, number>
+  onOpenCapModal?: () => void
 }
 
 export default function EnvelopesPage({
   isDirty, isRunning, onRunSimulation, onImportFees, onAddEnvelope, onOpenData,
+  capReachedByEnvelope, onOpenCapModal,
 }: Props) {
   const store = useStore()
   const activeSim = useStore(selectActiveSim)
@@ -626,6 +640,36 @@ export default function EnvelopesPage({
                 : <><IcRefresh /> À jour</>}
           </button>
         </div>
+
+        {/* ── Banner plafonds légaux ─────────────────────────────────── */}
+        {capReachedByEnvelope && Object.keys(capReachedByEnvelope).length > 0 && (
+          <div style={{
+            margin: '0', padding: '10px 20px',
+            background: 'color-mix(in srgb, var(--warning) 10%, transparent)',
+            borderBottom: '1px solid color-mix(in srgb, var(--warning) 30%, transparent)',
+            display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 14 }}>⚠️</span>
+            <span className="small" style={{ flex: 1, color: 'var(--warning)' }}>
+              Plafonds légaux atteints :{' '}
+              {Object.entries(capReachedByEnvelope)
+                .map(([id, yr]) => {
+                  const env = envelopes.find(e => e.id === id)
+                  return env ? `${env.label} (an ${yr + 1})` : id
+                })
+                .join(', ')}
+            </span>
+            {onOpenCapModal && (
+              <button
+                className="btn btn-sm"
+                style={{ background: 'var(--warning)', color: '#000', flexShrink: 0 }}
+                onClick={onOpenCapModal}
+              >
+                Gérer les débordements
+              </button>
+            )}
+          </div>
+        )}
 
         {/* ── FilterChips (global params) ────────────────────────────── */}
         <div
@@ -722,6 +766,7 @@ export default function EnvelopesPage({
                 selected={selId === env.id}
                 onOpenDetail={id => setSelId(s => s === id ? null : id)}
                 effort={effort}
+                capReachedYear={capReachedByEnvelope?.[env.id]}
               />
             ))
           )}

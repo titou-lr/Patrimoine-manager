@@ -15,6 +15,7 @@ import {
   markProfileOnboarded,
 } from './profiles/profileService'
 import EnvelopeTypeSelector from './components/inputs/EnvelopeTypeSelector'
+import CapOverflowModal, { type EnvelopeCapUpdate } from './components/inputs/CapOverflowModal'
 import { createEnvelopeFromPreset } from './data/envelopePresets'
 import SimulationComparePanel from './components/results/SimulationComparePanel'
 import DashboardPage from './components/pages/DashboardPage'
@@ -284,6 +285,9 @@ export default function App() {
   const [dataModalOpen, setDataModalOpen] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const [showEnvelopeSelector, setShowEnvelopeSelector] = useState(false)
+  const [capModalOpen, setCapModalOpen] = useState(false)
+  const [capModalDismissed, setCapModalDismissed] = useState(false)
+  const [capReachedByEnvelope, setCapReachedByEnvelope] = useState<Record<string, number>>({})
   const [feesImportTarget, setFeesImportTarget] = useState<{
     envelopeId: string; envelopeType: Envelope['type']; envelopeLabel: string
   } | null>(null)
@@ -333,6 +337,7 @@ export default function App() {
   function handleRunSimulation() {
     if (isRunning || !coherent) return
     setIsRunning(true)
+    setCapModalDismissed(false)
     setTimeout(async () => {
       const sim = selectActiveSim(useStore.getState())
       const standardState = computeRunState(sim.envelopes, sim.globalParams, sim.events ?? [])
@@ -347,7 +352,37 @@ export default function App() {
       }
       setDirty(false)
       setIsRunning(false)
+
+      // Détection enveloppes au plafond
+      const caps: Record<string, number> = {}
+      if (standardState.results.length > 0) {
+        const last = standardState.results[standardState.results.length - 1]
+        for (const [envId, envResult] of Object.entries(last.byEnvelope)) {
+          if (envResult.capReachedYear !== undefined) caps[envId] = envResult.capReachedYear
+        }
+      }
+      setCapReachedByEnvelope(caps)
+      if (Object.keys(caps).length > 0 && !capModalDismissed) {
+        setCapModalOpen(true)
+      }
     }, 0)
+  }
+
+  function handleCapModalApply(updates: EnvelopeCapUpdate[]) {
+    for (const upd of updates) {
+      if (upd.action === 'stop') {
+        updateEnvelope(upd.sourceEnvelopeId, { monthlyContribution: 0 })
+      } else if (upd.action === 'redirect' && upd.targetEnvelopeId) {
+        updateEnvelope(upd.sourceEnvelopeId, { monthlyContribution: 0 })
+        const target = envelopes.find(e => e.id === upd.targetEnvelopeId)
+        if (target) {
+          updateEnvelope(upd.targetEnvelopeId, { monthlyContribution: target.monthlyContribution + upd.amount })
+        }
+      }
+    }
+    setCapModalOpen(false)
+    setCapModalDismissed(true)
+    handleRunSimulation()
   }
 
   function handleOnboardingComplete(data: OnboardingResult) {
@@ -535,6 +570,8 @@ export default function App() {
             onImportFees={handleImportFees}
             onAddEnvelope={() => setShowEnvelopeSelector(true)}
             onOpenData={() => navigateTo('data')}
+            capReachedByEnvelope={Object.keys(capReachedByEnvelope).length > 0 ? capReachedByEnvelope : undefined}
+            onOpenCapModal={() => setCapModalOpen(true)}
           />
         )}
         {currentPage === 'optimizer' && <PortfolioOptimizer />}
@@ -587,6 +624,16 @@ export default function App() {
 
       {showOnboarding && (
         <OnboardingModal onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />
+      )}
+
+      {capModalOpen && Object.keys(capReachedByEnvelope).length > 0 && (
+        <CapOverflowModal
+          capReachedByEnvelope={capReachedByEnvelope}
+          envelopes={envelopes}
+          lastResults={runState.results.length > 0 ? runState.results[runState.results.length - 1] : null}
+          onApply={handleCapModalApply}
+          onClose={() => { setCapModalOpen(false); setCapModalDismissed(true) }}
+        />
       )}
 
       {showEnvelopeSelector && (
