@@ -310,19 +310,19 @@ export default function PortfolioOptimizer() {
         </div>
 
         {/* Results area — scroll */}
-        <div className="scroll" style={{ flex: 1, padding: '16px 22px 40px' }}>
-          <div style={{ maxWidth: 960, margin: '0 auto', paddingLeft: 4, paddingRight: 4 }}>
+        <div className="scroll" style={{ flex: 1, padding: '16px 22px 32px' }}>
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
         {/* ── PARAMÈTRES ──────────────────────────────────────────────── */}
-        <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-4">
 
-          {/* Section régime économique */}
-          <div className="bg-surface border border-border rounded-2xl p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-1">Régime économique actuel</h3>
-            <p className="text-xs text-muted mb-4">
-              Laissez vide pour utiliser les probabilités historiques (recommandé).
-            </p>
-            <div className="grid grid-cols-2 gap-2">
+          {/* Régime économique — pleine largeur */}
+          <div className="col-span-2 bg-surface border border-border rounded-2xl p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="text-sm font-semibold text-foreground">Régime économique actuel</h3>
+              <span className="text-[10px] text-muted">(laisser vide = probabilités historiques)</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
               {REGIME_CARDS.map(card => (
                 <button
                   key={card.key}
@@ -345,97 +345,85 @@ export default function PortfolioOptimizer() {
             {selectedRegime && (
               <button
                 onClick={() => setSelectedRegime(null)}
-                className="mt-3 text-xs text-muted hover:text-foreground"
+                className="mt-2 text-xs text-muted hover:text-foreground"
               >
                 ↺ Réinitialiser
               </button>
             )}
           </div>
 
-          {/* Section paramètres d'optimisation */}
-          <div className="bg-surface border border-border rounded-2xl p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Paramètres d'optimisation</h3>
-            <div className="grid grid-cols-2 gap-4">
-
-              {/* Rendement minimum acceptable */}
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-muted uppercase tracking-wider">Rendement min. acceptable</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={targetReturn}
-                    onChange={e => { setTargetReturn(Number(e.target.value)); setTargetWarning(null) }}
-                    min={0} max={30} step={0.5}
-                    className={`w-20 h-8 bg-elevated border rounded-lg px-3 text-sm font-mono text-foreground ${
-                      targetWarning ? 'border-yellow-500' : 'border-border'
-                    }`}
-                  />
-                  <span className="text-xs text-muted">%/an</span>
-                </div>
+          {/* Rendement min + Horizon — demi-largeur */}
+          <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] text-muted uppercase tracking-wider shrink-0 w-36">Rendement min. acceptable</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={targetReturn}
+                  onChange={e => { setTargetReturn(Number(e.target.value)); setTargetWarning(null) }}
+                  min={0} max={30} step={0.5}
+                  className={`w-20 h-8 bg-elevated border rounded-lg px-3 text-sm font-mono text-foreground ${
+                    targetWarning ? 'border-yellow-500' : 'border-border'
+                  }`}
+                />
+                <span className="text-xs text-muted">%/an</span>
                 {allAssets.length > 0 && (
-                  <span className="text-[10px] text-muted">
-                    Max : {(maxAchievableNetReturn * 100).toFixed(1)}%
-                  </span>
-                )}
-                {targetWarning && (
-                  <span className="text-[10px] text-yellow-400">{targetWarning}</span>
+                  <span className="text-[10px] text-muted">max {(maxAchievableNetReturn * 100).toFixed(1)}%</span>
                 )}
               </div>
-
-              {/* Horizon */}
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-muted uppercase tracking-wider">Horizon</span>
-                <div className="h-8 flex items-center text-sm font-mono tabular-nums" style={{ color: 'var(--primary)' }}>
-                  {globalParams.duration} ans
-                  <span className="ml-2 text-xs text-muted font-normal">(paramètres globaux)</span>
-                </div>
-              </div>
-
-              {/* Tolérance au risque — pleine largeur */}
-              <div className="col-span-2 flex flex-col gap-1">
-                <span className="text-[10px] text-muted uppercase tracking-wider">Tolérance au risque</span>
-                <div className="flex gap-1">
-                  {(['prudent', 'balanced', 'dynamic'] as const).map(rt => (
-                    <button
-                      key={rt}
-                      onClick={() => setRiskTolerance(rt)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                        riskTolerance === rt
-                          ? 'bg-orange text-black border-orange'
-                          : 'border-border text-muted hover:text-foreground'
-                      }`}
-                    >
-                      {rt === 'prudent' ? 'Prudent' : rt === 'balanced' ? 'Équilibré' : 'Dynamique'}
-                    </button>
-                  ))}
-                  <span className="text-[10px] text-muted ml-3 self-center">
-                    {riskTolerance === 'prudent' ? 'CVaR95 ≥ −10%' : riskTolerance === 'balanced' ? 'CVaR95 ≥ −20%' : 'Aucune contrainte CVaR'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Nombre de simulations */}
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] text-muted uppercase tracking-wider">Simulations Monte-Carlo</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={nSimulations}
-                    onChange={e => setNSimulations(Math.max(100, Math.min(5000, Number(e.target.value))))}
-                    min={100} max={5000} step={100}
-                    className="w-20 h-8 bg-elevated border border-border rounded-lg px-3 text-sm font-mono text-foreground"
-                  />
-                  <span className="text-[10px] text-muted">1 000 reco. · 5 000 précis</span>
-                </div>
-              </label>
-
+            </div>
+            {targetWarning && (
+              <span className="text-[10px] text-yellow-400">{targetWarning}</span>
+            )}
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] text-muted uppercase tracking-wider shrink-0 w-36">Horizon</span>
+              <span className="text-sm font-mono tabular-nums" style={{ color: 'var(--primary)' }}>
+                {globalParams.duration} ans
+              </span>
+              <span className="text-[10px] text-muted">(paramètres globaux)</span>
             </div>
           </div>
 
-          {/* Section vues de marché */}
-          <div className="bg-surface border border-border rounded-2xl p-5">
+          {/* N simulations + Tolérance risque — demi-largeur */}
+          <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] text-muted uppercase tracking-wider shrink-0 w-36">Simulations MC</span>
+              <input
+                type="number"
+                value={nSimulations}
+                onChange={e => setNSimulations(Math.max(100, Math.min(5000, Number(e.target.value))))}
+                min={100} max={5000} step={100}
+                className="w-20 h-8 bg-elevated border border-border rounded-lg px-3 text-sm font-mono text-foreground"
+              />
+              <span className="text-[10px] text-muted">1k reco · 5k précis</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-[10px] text-muted uppercase tracking-wider shrink-0 w-36">Tolérance risque</span>
+              <div className="flex gap-1">
+                {(['prudent', 'balanced', 'dynamic'] as const).map(rt => (
+                  <button
+                    key={rt}
+                    onClick={() => setRiskTolerance(rt)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                      riskTolerance === rt
+                        ? 'bg-orange text-black border-orange'
+                        : 'border-border text-muted hover:text-foreground'
+                    }`}
+                  >
+                    {rt === 'prudent' ? 'Prudent' : rt === 'balanced' ? 'Équilibré' : 'Dynamique'}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[10px] text-muted">
+                {riskTolerance === 'prudent' ? 'CVaR95 ≥ −10%' : riskTolerance === 'balanced' ? 'CVaR95 ≥ −20%' : 'Aucune contrainte CVaR'}
+              </span>
+            </div>
+          </div>
+
+          {/* Vues de marché — pleine largeur */}
+          <div className="col-span-2 bg-surface border border-border rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-foreground mb-1">Vues de marché <span className="text-muted font-normal">(optionnel)</span></h3>
-            <p className="text-xs text-muted mb-4">
+            <p className="text-xs text-muted mb-3">
               Exprimez vos convictions pour affiner l'optimisation Black-Litterman.
             </p>
 
@@ -508,36 +496,38 @@ export default function PortfolioOptimizer() {
             )}
           </div>
 
-          {/* Bouton Lancer */}
-          <button
-            onClick={handleOptimize}
-            disabled={running || activeEnvelopes.length === 0}
-            className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors ${
-              running || activeEnvelopes.length === 0
-                ? 'bg-orange/40 text-black/60 cursor-not-allowed'
-                : 'bg-orange text-black hover:bg-orange/90 cursor-pointer'
-            }`}
-          >
-            {running ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3" />
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                </svg>
-                Simulation en cours… {progress}% ({progressTrajectories} / {nSimulations})
-              </span>
-            ) : (
-              'Optimiser le portefeuille'
-            )}
-          </button>
+          {/* Bouton Lancer — pleine largeur */}
+          <div className="col-span-2">
+            <button
+              onClick={handleOptimize}
+              disabled={running || activeEnvelopes.length === 0}
+              className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                running || activeEnvelopes.length === 0
+                  ? 'bg-orange/40 text-black/60 cursor-not-allowed'
+                  : 'bg-orange text-black hover:bg-orange/90 cursor-pointer'
+              }`}
+            >
+              {running ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3" />
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  Simulation en cours… {progress}% ({progressTrajectories} / {nSimulations})
+                </span>
+              ) : (
+                'Optimiser le portefeuille'
+              )}
+            </button>
+          </div>
 
         </div>
 
         {/* ── RÉSULTATS ─────────────────────────────────────────────────── */}
-        <div className="space-y-5" style={{ marginTop: 20 }}>
+        <div className="space-y-4" style={{ marginTop: 16 }}>
 
           {!result && !running && (
-            <div className="bg-surface border border-border rounded-2xl flex flex-col items-center justify-center py-12 gap-4">
+            <div className="bg-surface border border-border rounded-2xl flex flex-col items-center justify-center py-8 gap-3">
               <div className="w-12 h-12 rounded-full bg-elevated flex items-center justify-center text-2xl">
                 ⚙
               </div>
