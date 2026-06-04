@@ -105,8 +105,8 @@ export default function AllocationPieChart({ results, envelopes }: Props) {
 
         {/* Donut 1 — par enveloppe */}
         <div className="row gap16" style={{ alignItems: 'center', flex: 1, minWidth: 260 }}>
-          <div style={{ position: 'relative', width: 160, height: 160, flexShrink: 0 }}>
-            <PieChart width={160} height={160} style={{ overflow: 'visible' }}>
+          <div style={{ position: 'relative', width: 160, height: 160, flexShrink: 0, overflow: 'hidden' }}>
+            <PieChart width={160} height={160}>
               <Pie
                 data={data}
                 cx={80} cy={80}
@@ -166,8 +166,8 @@ export default function AllocationPieChart({ results, envelopes }: Props) {
 
         {/* Donut 2 — par classe */}
         <div className="row gap16" style={{ alignItems: 'center', flex: 1, minWidth: 200 }}>
-          <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
-            <PieChart width={140} height={140} style={{ overflow: 'visible' }}>
+          <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0, overflow: 'hidden' }}>
+            <PieChart width={140} height={140}>
               <Pie
                 data={classData}
                 cx={70} cy={70}
