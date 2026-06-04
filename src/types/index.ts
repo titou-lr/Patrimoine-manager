@@ -203,6 +203,7 @@ export interface EnvelopeResult {
   realValue: number     // valeur nette corrigée inflation
   totalFeesPaid: number // cumul frais payés sur la durée
   capped?: boolean              // plafond de versement atteint
+  capReachedYear?: number       // année 0-based où le plafond a été atteint pour la 1ère fois
   perTaxSavings?: number        // économie fiscale PER pour cette année (PER uniquement)
   contributionsRealValue?: number  // versements cumulés en euros constants (Fisher)
   taxDetails?: string           // explication textuelle du calcul fiscal (ex : "PEA ≥ 5 ans")

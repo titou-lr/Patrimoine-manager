@@ -32,8 +32,8 @@ import { buildEnvelopeEffects, type EnvelopeEffect } from './lifeEventsEngine'
 
 const MONTHS_PER_YEAR = 12
 
-/** Plafonds légaux de versements par type d'enveloppe (en €) */
-const DEFAULT_MAX_CONTRIBUTIONS: Partial<Record<EnvelopeType, number>> = {
+/** Plafonds légaux de versements cumulés par type d'enveloppe (en €) — source unique */
+export const ENVELOPE_CAPS: Partial<Record<EnvelopeType, number>> = {
   livret_a:      22_950,
   ldds:          12_000,
   livret_jeune:   1_600,
@@ -86,7 +86,7 @@ function simulateEnvelope(
   const fees = envelope.fees ?? ZERO_FEES
   const isOrderBased = envelope.type === 'pea' || envelope.type === 'cto'
   const inflationDecimal = inflationRate / 100
-  const maxCont = envelope.maxContribution ?? DEFAULT_MAX_CONTRIBUTIONS[envelope.type] ?? Infinity
+  const maxCont = envelope.maxContribution ?? ENVELOPE_CAPS[envelope.type] ?? Infinity
   const dividendRate = envelope.dividendRate ?? 0
   const freq = envelope.contributionFrequency ?? 'monthly'
   const monthlyDividendOut = (envelope.reinvestDividends === false)
@@ -103,6 +103,7 @@ function simulateEnvelope(
   let totalContributed = envelope.initialCapital
   let totalFeesPaid = 0
   let isCapped = false
+  let capFirstYear: number | undefined = undefined
   let contribRealValueAccum = 0
 
   const results: EnvelopeResult[] = []
@@ -134,10 +135,10 @@ function simulateEnvelope(
         const available = maxCont - totalContributed
         if (available <= 0) {
           monthlyGross = 0
-          isCapped = true
+          if (!isCapped) { isCapped = true; capFirstYear = y - 1 }
         } else if (baseAmount > available) {
           monthlyGross = available
-          isCapped = true
+          if (!isCapped) { isCapped = true; capFirstYear = y - 1 }
         } else {
           monthlyGross = baseAmount
         }
@@ -233,6 +234,7 @@ function simulateEnvelope(
       realValue,
       totalFeesPaid,
       capped: isCapped,
+      capReachedYear: capFirstYear,
       perTaxSavings: annualPerTaxSavings,
       contributionsRealValue: contribRealValueAccum,
       taxDetails: taxResult.details,
