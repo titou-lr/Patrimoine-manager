@@ -37,11 +37,12 @@ jobs:
           "
 
       - name: Build Windows installer
-        run: npm run electron:build
+        run: npm run electron:build -- --publish never
 
       - name: Create GitHub Release and upload installer
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           files: dist-electron/*.exe
           generate_release_notes: true   # notes auto depuis les commits depuis le dernier tag
           fail_on_unmatched_files: true
