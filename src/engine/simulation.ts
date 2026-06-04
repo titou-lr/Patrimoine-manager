@@ -121,11 +121,17 @@ function simulateEnvelope(
       if (freqActive && freq === 'quarterly') freqActive = m % 3 === 0
       if (freqActive && freq === 'annual') freqActive = m === 1
 
-      const baseAmount = freq === 'quarterly'
+      let baseAmount = freq === 'quarterly'
         ? envelope.monthlyContribution * 3
         : freq === 'annual'
         ? envelope.monthlyContribution * 12
         : envelope.monthlyContribution
+
+      // contributionRedirectFrom : extra versement à partir d'une année pivot
+      if (envelope.contributionRedirectFrom && freqActive && (y - 1) >= envelope.contributionRedirectFrom.year) {
+        const mult = freq === 'quarterly' ? 3 : freq === 'annual' ? 12 : 1
+        baseAmount += envelope.contributionRedirectFrom.extraMonthly * mult
+      }
 
       // ── Plafond versements ────────────────────────────────────────────────
       let monthlyGross: number

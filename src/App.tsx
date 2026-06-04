@@ -374,10 +374,10 @@ export default function App() {
         updateEnvelope(upd.sourceEnvelopeId, { monthlyContribution: 0 })
       } else if (upd.action === 'redirect' && upd.targetEnvelopeId) {
         updateEnvelope(upd.sourceEnvelopeId, { monthlyContribution: 0 })
-        const target = envelopes.find(e => e.id === upd.targetEnvelopeId)
-        if (target) {
-          updateEnvelope(upd.targetEnvelopeId, { monthlyContribution: target.monthlyContribution + upd.amount })
-        }
+        const capYear = capReachedByEnvelope[upd.sourceEnvelopeId] ?? 0
+        updateEnvelope(upd.targetEnvelopeId, {
+          contributionRedirectFrom: { year: capYear, extraMonthly: upd.amount },
+        })
       }
     }
     setCapModalOpen(false)
