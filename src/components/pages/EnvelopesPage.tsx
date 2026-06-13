@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useStore, selectActiveSim } from '../../store/useStore'
+import { useStore, selectActiveSim, getEffortTotal } from '../../store/useStore'
 import { formatEur } from '../../utils/format'
 import NumberInput from '../ui/NumberInput'
 import { runSimulation } from '../../engine/simulation'
@@ -601,6 +601,7 @@ export default function EnvelopesPage({
   const { envelopes, globalParams } = activeSim
   const { updateGlobalParams } = store
 
+  const effort = getEffortTotal(activeSim)
   const contributionSum = envelopes.reduce((s, e) => s + e.monthlyContribution, 0)
 
   // Open/collapsed groups
