@@ -72,11 +72,12 @@ patrimoine-sim/
     │   │   ├── EnvelopeAssetsFees.tsx      # Actifs + frais — tableau actifs, import frais banque
     │   │   ├── EnvelopeTaxInfo.tsx         # Infobande fiscale résumée par enveloppe
     │   │   ├── EnvelopeTypeSelector.tsx    # Modal choix type enveloppe (grilles par groupe)
-    │   │   └── AllocationRow.tsx      # Ligne actif (nom, rendement, allocation %)
+    │   │   ├── AllocationRow.tsx      # Ligne actif (nom, rendement, allocation %)
+    │   │   └── CapOverflowModal.tsx   # Modal plafond légal atteint — choix arrêt ou redirection surplus vers autre enveloppe
     │   ├── results/
     │   │   ├── PatrimoineChart.tsx   # AreaChart empilé par enveloppe + ligne réelle
     │   │   ├── InflationChart.tsx    # AreaChart valeur réelle + érosion inflation
-    │   │   ├── AllocationPieChart.tsx # Donut répartition patrimoine (sélecteur année)
+    │   │   ├── AllocationPieChart.tsx # Donut répartition par enveloppe (sélecteur année) + légende liste — sans texte Recharts interne, sans panel classe d'actifs
     │   │   ├── FeesImpactChart.tsx   # AreaChart avec/sans frais — impact cumulé (onglet fees)
     │   │   ├── RetirementPanel.tsx   # Paramètres + KPIs retraite
     │   │   ├── RetirementDualChart.tsx # Graphique accumulation + retrait
@@ -123,7 +124,9 @@ patrimoine-sim/
 - Moteur mensuel avec intérêts composés, frais complets (courtage, gestion, garde, entrée)
 - 3 scénarios de marché (pessimiste / réaliste / optimiste)
 - `isDirty` flag + bouton Refresh manuel — les résultats sont un snapshot figé (`RunState`)
-- Plafonds légaux de versements respectés (Livret A 22 950 €, PEA 150 000 €, etc.)
+- Plafonds légaux de versements respectés via `ENVELOPE_CAPS` (défini dans `engine/simulation.ts`) : Livret A 22 950 €, LDDS 12 000 €, Livret Jeune 1 600 €, PEA 150 000 €
+- Redirection des surplus de versements au-delà du plafond : `Envelope.capRedirectTo` (ID d'une autre enveloppe cible) — géré en 2 passes dans `runSimulation()`. `CapOverflowModal` permet à l'utilisateur de configurer ces redirections après simulation.
+- `EnvelopeResult.capReachedYear` (0-based) : année où le plafond a été atteint pour la première fois
 - Versements cumulés en euros constants (Fisher) — `contributionsRealValue`
 - Économie fiscale PER calculée annuellement (`perTaxSavings`)
 - Dividendes CTO non réinvestis : sortie mensuelle + fiscalité abattement 40%
@@ -184,7 +187,7 @@ patrimoine-sim/
 - Vue globale : AreaChart empilé par enveloppe + ligne valeur réelle
 - Impact frais : graphique avec/sans frais, économie potentielle — onglet `'fees'`
 - Inflation : valeur réelle vs nominale (Fisher exact)
-- Répartition : donut par enveloppe + donut par classe d'actifs
+- Répartition : donut par enveloppe avec légende liste (pas de donut par classe d'actifs)
 - Retraite : capital nécessaire, runway, graphique accumulation/retrait
 - Immobilier : simulateur prêt intégré
 - Capital : objectif avec horizon et versement supplémentaire nécessaire
@@ -305,6 +308,7 @@ interface Envelope {
   linkedGoal?: GoalType | null; currentRealValue?: number | null
   contributionFrequency?: 'monthly' | 'quarterly' | 'annual'
   reinvestDividends?: boolean; estimatedMonthlyDividends?: number
+  capRedirectTo?: string    // ID de l'enveloppe cible pour les versements excédentaires quand le plafond est atteint
 }
 
 interface GlobalParams {
@@ -315,6 +319,15 @@ interface GlobalParams {
   simulationMode?: 'standard' | 'advanced'
   initialRegime?: EconomicRegime | null
   riskTolerance?: 'prudent' | 'balanced' | 'dynamic'
+}
+
+interface EnvelopeResult {
+  capital: number; totalContributed: number
+  grossGains: number; tax: number; totalGains: number
+  realValue: number; totalFeesPaid: number
+  capped?: boolean              // plafond de versement atteint
+  capReachedYear?: number       // année 0-based où le plafond a été atteint pour la 1ère fois
+  perTaxSavings?: number; contributionsRealValue?: number
 }
 
 interface SimulationResult {
@@ -365,12 +378,16 @@ Sept fichiers purs dans `src/engine/` (zéro import React) :
 - Résout l'inflation via `resolveInflationRate()` (scénarios prédéfinis ou valeur custom)
 - Construit le `TaxProfile` depuis `params.tmi` et `params.isCouple`
 - Appelle `buildEnvelopeEffects()` pour injecter les effets des événements de vie mois par mois
-- Plafonds légaux : `DEFAULT_MAX_CONTRIBUTIONS` ou `envelope.maxContribution`
+- Plafonds légaux : `ENVELOPE_CAPS` (source unique, exporté depuis ce fichier) ou `envelope.maxContribution`
+- **Logique 2-passes pour la redirection de surplus** :
+  1. Passe 1 : simuler toutes les enveloppes, collecter le `surplusPerMonth` des enveloppes plafonnées qui ont un `capRedirectTo`
+  2. Passe 2 : ré-simuler les enveloppes cibles avec les contributions extra (`extraContribsByTarget`) injectées mois par mois
+- `capReachedYear` (0-based) stocké dans `EnvelopeResult` — lu par `App.tsx` pour déclencher `CapOverflowModal`
 - Frais mensuels (courtage, entrée) et annuels (gestion, garde) en décembre
 - Dividendes CTO taxés en décembre via `taxCTODividend()`
 - Fiscalité à la sortie via `computeTax()` (module `taxation.ts`)
 - Valeur réelle via `presentValue()` (module `inflation.ts`)
-- **`ZERO_FEES` est exporté depuis ce fichier** — ne pas le redéfinir ailleurs
+- **`ZERO_FEES` et `ENVELOPE_CAPS` sont exportés depuis ce fichier** — ne pas les redéfinir ailleurs
 
 ### lifeEventsEngine.ts
 - `buildEnvelopeEffects(events, envelopeId, durationYears, numActiveEnvs, income, rate)` → `Map<number, EnvelopeEffect>`
@@ -441,11 +458,18 @@ interface RunState {
 
 Les résultats de simulation ne sont **pas** recalculés en continu. Le flux est :
 1. L'utilisateur modifie une enveloppe → `isDirty` passe à `true` (point dans la nav)
-2. L'utilisateur clique "Lancer la simulation" → `handleRunSimulation()` dans `App.tsx`
+2. L'utilisateur clique "Lancer la simulation" → `handleRunSimulation(capDismissed?)` dans `App.tsx`
 3. `runSimulation(envelopes, globalParams, events)` est appelé → `runState` mis à jour
-4. `isDirty` repasse à `false`
-5. Le bouton n'est actif que si `isContributionCoherent()` retourne `true`
-6. Auto-run une fois par changement de `activeSim.id` (switch de simulation)
+4. Si des enveloppes ont atteint leur plafond et que `capDismissed = false` → `CapOverflowModal` s'ouvre
+5. L'utilisateur configure les redirections → `handleCapModalApply(choices)` met à jour `capRedirectTo` dans le store et rappelle `handleRunSimulation(true)`
+6. `isDirty` repasse à `false`
+7. Le bouton n'est actif que si `isContributionCoherent()` retourne `true`
+8. Auto-run une fois par changement de `activeSim.id` (switch de simulation)
+
+**States App.tsx liés aux plafonds** :
+- `capModalOpen: boolean` — contrôle l'affichage de `CapOverflowModal`
+- `capModalDismissed: boolean` — `true` après fermeture sans appliquer (évite de rouvrir la modal à chaque re-run)
+- `capReachedByEnvelope: Record<string, number>` — map `envelopeId → capReachedYear` issue de la dernière simulation
 
 ## Navigation (AppPage)
 
@@ -505,6 +529,7 @@ type ChartTab = 'projection' | 'inflation' | 'retraite' | 'immobilier' | 'capita
 | Constante | Fichier | Valeur |
 |-----------|---------|--------|
 | `ZERO_FEES` | `engine/simulation.ts` | Frais nuls (source unique) |
+| `ENVELOPE_CAPS` | `engine/simulation.ts` | Plafonds légaux : livret_a 22 950 €, ldds 12 000 €, livret_jeune 1 600 €, pea 150 000 € (source unique) |
 | `DEFAULT_RETIREMENT_PARAMS` | `store/useStore.ts` | Params retraite par défaut |
 | `MAX_HISTORY_SIZE` | `store/useStore.ts` | 30 niveaux undo/redo |
 | `MAX_RUNWAY_MONTHS` | `engine/retirement.ts` | 200 ans (garde-fou boucle) |
@@ -564,3 +589,27 @@ npm run electron:build   # build prod → installeur NSIS dans dist-electron/
 - Ne pas redéfinir `PS_RATE` ailleurs que dans `engine/taxation.ts`
 - Ne pas recalculer les résultats dans un `useEffect` — utiliser le pattern `RunState` / bouton Refresh
 - Ne pas oublier le 3ème argument `events` dans les appels à `runSimulation()`
+- Ne pas modifier `monthlyContribution` dans le store pour gérer les plafonds — utiliser uniquement `capRedirectTo` sur l'enveloppe source et la logique 2-passes dans `simulation.ts`
+- Ne pas remettre `capModalDismissed` à `false` dans `handleRunSimulation` directement — utiliser le paramètre `capDismissed` passé en argument (bug corrigé : le state `capModalDismissed` est mis à `true` uniquement via `onClose` du modal)
+
+## Knowledge Graph (Graphify)
+
+Le projet dispose d'un knowledge graph généré par [graphify](https://github.com/safishamsi/graphify).
+
+Fichiers générés dans `graphify-out/` (ne pas versionner les résultats, régénérer après features) :
+- `graph.json` — graph complet (736 nœuds, 1291 edges, 80 communautés)
+- `GRAPH_REPORT.md` — résumé architecture et communautés
+- `graph.html` — visualisation interactive
+
+Pour interroger le graph dans une session Claude Code :
+```
+graphify query "<question>"
+```
+
+Pour régénérer après ajout de features :
+```
+python -m graphify . --backend claude
+python -m graphify cluster-only <chemin-repo>
+```
+
+Le graph est construit depuis le commit HEAD au moment de la génération — vérifier la fraîcheur dans `GRAPH_REPORT.md` (champ "Built from commit").
