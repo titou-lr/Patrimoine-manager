@@ -334,10 +334,9 @@ export default function App() {
     setCurrentPage(page); window.scrollTo(0, 0)
   }
 
-  function handleRunSimulation() {
+  function handleRunSimulation(capDismissed = false) {
     if (isRunning || !coherent) return
     setIsRunning(true)
-    setCapModalDismissed(false)
     setTimeout(async () => {
       const sim = selectActiveSim(useStore.getState())
       const standardState = computeRunState(sim.envelopes, sim.globalParams, sim.events ?? [])
@@ -362,7 +361,7 @@ export default function App() {
         }
       }
       setCapReachedByEnvelope(caps)
-      if (Object.keys(caps).length > 0 && !capModalDismissed) {
+      if (Object.keys(caps).length > 0 && !capDismissed) {
         setCapModalOpen(true)
       }
     }, 0)
@@ -374,7 +373,7 @@ export default function App() {
     }
     setCapModalOpen(false)
     setCapModalDismissed(true)
-    handleRunSimulation()
+    handleRunSimulation(true)
   }
 
   function handleOnboardingComplete(data: OnboardingResult) {
