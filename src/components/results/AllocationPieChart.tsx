@@ -151,47 +151,32 @@ export default function AllocationPieChart({ results, envelopes }: Props) {
           </div>
         </div>
 
-        {/* Donut 2 — par classe */}
-        <div className="row gap24" style={{ alignItems: 'center', flex: 1, minWidth: 200 }}>
-          <div style={{ width: 160, height: 160, flexShrink: 0 }}>
-            <PieChart width={160} height={160}>
-              <Pie
-                data={classData}
-                cx={80} cy={80}
-                innerRadius={54} outerRadius={72}
-                dataKey="value"
-                paddingAngle={2}
-                startAngle={90} endAngle={-270}
-                stroke="none"
-                isAnimationActive={false}
-              >
-                {classData.map((d, i) => <Cell key={i} fill={d.color} />)}
-              </Pie>
-            </PieChart>
+        {/* Panel classe — liste pure, pas de donut */}
+        <div className="col" style={{ gap: 5, flex: 1, minWidth: 200 }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--ink)', lineHeight: 1 }}>{dominantPct}%</div>
+            <div style={{ fontSize: 10, opacity: 0.65, color: 'var(--ink-tertiary)', marginTop: 3 }}>{dominant?.name}</div>
           </div>
-
-          {/* Colonne droite : info + légende classes */}
-          <div className="col" style={{ gap: 8, flex: 1 }}>
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--ink)', lineHeight: 1 }}>{dominantPct}%</div>
-              <div style={{ fontSize: 10, opacity: 0.65, color: 'var(--ink-tertiary)', marginTop: 3 }}>{dominant?.name}</div>
-            </div>
-            {classData.map(d => {
-              const pct = Math.round((d.value / total) * 100)
-              return (
-                <div key={d.name} className="row gap6" style={{ alignItems: 'center' }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-                  <span className="small grow" style={{ color: 'var(--ink-secondary)' }}>{d.name}</span>
-                  <div style={{ width: 40, height: 3, background: 'var(--hairline)', borderRadius: 99, overflow: 'hidden', flexShrink: 0 }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: d.color, borderRadius: 99 }} />
-                  </div>
-                  <span className="mono caption" style={{ textAlign: 'right', width: 30, color: 'var(--ink-tertiary)', flexShrink: 0 }}>
-                    {pct}%
-                  </span>
+          {classData.map(d => {
+            const pct = Math.round((d.value / total) * 100)
+            return (
+              <div key={d.name} className="row gap6" style={{ alignItems: 'center' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                <span className="small grow" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {d.name}
+                </span>
+                <div style={{ width: 48, height: 3, background: 'var(--hairline)', borderRadius: 99, overflow: 'hidden', flexShrink: 0 }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: d.color, borderRadius: 99 }} />
                 </div>
-              )
-            })}
-          </div>
+                <span className="mono caption" style={{ textAlign: 'right', width: 68, flexShrink: 0, color: 'var(--ink-secondary)' }}>
+                  {formatEur(d.value)}
+                </span>
+                <span className="mono caption" style={{ textAlign: 'right', width: 30, color: 'var(--ink-tertiary)', flexShrink: 0 }}>
+                  {pct}%
+                </span>
+              </div>
+            )
+          })}
         </div>
 
       </div>
