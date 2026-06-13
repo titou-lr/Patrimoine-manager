@@ -17,7 +17,7 @@ components/pages/EnvelopesPage.tsx ← useStore (envelopes, globalParams, isDirt
 
 Le store Zustand **ne calcule pas** — il stocke les paramètres.  
 Les résultats sont un snapshot `RunState` mis à jour manuellement via le bouton « Lancer la simulation ».  
-`isDirty` passe à `true` dès qu'une enveloppe ou un paramètre est modifié ; le bouton Run est actif uniquement si `isContributionCoherent()` est vrai.
+`isDirty` passe à `true` dès qu'une enveloppe ou un paramètre est modifié ; le bouton Run est actif dès que la simulation n'est pas en cours.
 
 ## Architecture fiscale
 
@@ -103,14 +103,10 @@ Points d'attention :
 - `SIMULATION_AFFECTING_KEYS` liste les champs Envelope qui mettent `isDirty` à `true`
 - `updateGlobalParams` synchronise automatiquement `monthlyContribution` si salaire/taux change
 
-## Synchronisation effort ↔ versements
+## Synchronisation versements
 
-Le montant mensuel investi est `salaire × taux / 100` (affiché comme « effort »).  
 Chaque enveloppe stocke `contributionMode` (`'euros'` ou `'percent'`) et `contributionPercent`.  
-Quand le salaire ou le taux d'investissement change, `updateGlobalParams` recalcule tous les `monthlyContribution` proportionnellement.  
-`isContributionCoherent()` vérifie que `sum(contributions) ≈ effort` (tolérance 1 €).  
-`rebalanceEnvelopes('last')` absorbe l'écart sur la dernière enveloppe modifiée.  
-`rebalanceEnvelopes('proportional')` redistribue en gardant les ratios.
+Quand le salaire ou le taux d'investissement change, `updateGlobalParams` recalcule tous les `monthlyContribution` proportionnellement.
 
 ## Données marché
 

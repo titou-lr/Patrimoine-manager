@@ -82,15 +82,11 @@ export default function SimulationComparePanel({ onClose }: Props) {
 
     const summary = allResults.map(({ sim, results }) => {
       const last = results[results.length - 1]
-      const effortMensuel = sim.envelopes
-        .filter((e) => e.active)
-        .reduce((sum, e) => sum + e.monthlyContribution, 0)
       return {
         sim,
         capitalFinal: last?.totalNominal ?? 0,
         gainsNets: last?.totalGains ?? 0,
         valeurReelle: last?.totalReal ?? 0,
-        effortMensuel,
       }
     })
 
@@ -196,10 +192,6 @@ export default function SimulationComparePanel({ onClose }: Props) {
                   label="Valeur réelle (inflation)"
                   values={summary.map((s) => formatEur(s.valeurReelle))}
                   colors={summary.map(() => 'text-muted')}
-                />
-                <TableRow
-                  label="Effort mensuel"
-                  values={summary.map((s) => formatEur(s.effortMensuel))}
                 />
               </tbody>
             </table>

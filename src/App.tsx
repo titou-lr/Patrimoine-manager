@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useStore, selectActiveSim, isContributionCoherent } from './store/useStore'
+import { useStore, selectActiveSim } from './store/useStore'
 import { runSimulation, ZERO_FEES } from './engine/simulation'
 import { runMonteCarlo } from './engine/markovEngine'
 import { exportToCSV } from './utils/exportCSV'
@@ -275,8 +275,6 @@ export default function App() {
   const activeSim = selectActiveSim(store)
   const { envelopes, globalParams, isDirty, events } = activeSim
 
-  const coherent = isContributionCoherent(activeSim)
-
   const [showOnboarding, setShowOnboarding] = useState(() => {
     const profile = getActiveProfile()
     return profile ? !profile.onboarded : false
@@ -335,7 +333,7 @@ export default function App() {
   }
 
   function handleRunSimulation(capDismissed = false) {
-    if (isRunning || !coherent) return
+    if (isRunning) return
     setIsRunning(true)
     setTimeout(async () => {
       const sim = selectActiveSim(useStore.getState())

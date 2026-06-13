@@ -55,9 +55,6 @@ interface StoreState {
   // Dirty flag
   setDirty: (v: boolean) => void
 
-  // Effort/contribution sync
-  rebalanceEnvelopes: (mode: 'last' | 'proportional') => void
-
   // History entries (Feature 2 — real-value tracking)
   addHistoryEntry: (entry: HistoryEntry) => void
   removeHistoryEntry: (id: string) => void
@@ -78,12 +75,6 @@ interface StoreState {
 /** Effort d'épargne mensuel total = salaire × taux / 100 */
 export function getEffortTotal(sim: Pick<Simulation, 'globalParams'>): number {
   return sim.globalParams.monthlyIncome * sim.globalParams.investmentRate / 100
-}
-
-/** Toujours cohérent — les contributions sont libres, indépendantes du salaire */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function isContributionCoherent(_sim: Simulation): boolean {
-  return true
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -460,56 +451,6 @@ export const useStore = create<StoreState>()(
             }
           }),
         })),
-
-      rebalanceEnvelopes: (mode) =>
-        set((s) => {
-          const activeSim = selectActiveSim(s)
-          const effort = getEffortTotal(activeSim)
-          const activeEnvs = activeSim.envelopes.filter((e) => e.active)
-
-          if (mode === 'last') {
-            const lastId = activeSim.lastModifiedEnvelopeId
-            const lastEnv = lastId ? activeEnvs.find((e) => e.id === lastId) : null
-            if (!lastEnv) return s
-            const sumOthers = activeEnvs
-              .filter((e) => e.id !== lastId)
-              .reduce((acc, e) => acc + e.monthlyContribution, 0)
-            const newMonthly = Math.max(0, effort - sumOthers)
-            const newPercent = effort > 0 ? (newMonthly / effort) * 100 : 0
-            return {
-              simulations: mapActive(s.simulations, s.activeSimulationId, (sim) => ({
-                ...sim,
-                ...pushHistory(sim),
-                envelopes: sim.envelopes.map((e) =>
-                  e.id === lastId
-                    ? { ...e, monthlyContribution: newMonthly, contributionPercent: newPercent }
-                    : e
-                ),
-                isDirty: true,
-              })),
-            }
-          }
-
-          // proportional: scale all active envelopes so sum = effort
-          const sum = activeEnvs.reduce((acc, e) => acc + e.monthlyContribution, 0)
-          const scale = sum > 0 ? effort / sum : 0
-          return {
-            simulations: mapActive(s.simulations, s.activeSimulationId, (sim) => ({
-              ...sim,
-              ...pushHistory(sim),
-              envelopes: sim.envelopes.map((e) => {
-                if (!e.active) return e
-                const newMonthly = Math.round(e.monthlyContribution * scale)
-                return {
-                  ...e,
-                  monthlyContribution: newMonthly,
-                  contributionPercent: effort > 0 ? (newMonthly / effort) * 100 : 0,
-                }
-              }),
-              isDirty: true,
-            })),
-          }
-        }),
 
       // ── History entries ──
 

@@ -91,20 +91,6 @@ export function generateAlerts(
     })
   }
 
-  // Versements incohérents
-  const contributionSum = active.reduce((acc, e) => acc + e.monthlyContribution, 0)
-  if (effort > 0 && Math.abs(contributionSum - effort) > 1) {
-    alerts.push({
-      id: 'incoherent_contributions',
-      type: 'warning',
-      priority: 1,
-      title: 'Versements incohérents',
-      message: `Le total de vos versements (${formatEur(contributionSum)}) ne correspond pas à votre effort d'investissement (${formatEur(effort)}). La simulation ne peut pas être lancée.`,
-      actionLabel: 'Rééquilibrer',
-      actionTarget: 'envelopes',
-    })
-  }
-
   // ── Priority 2 — Opportunités fiscales ───────────────────────────────────
 
   // PEA seuil 5 ans

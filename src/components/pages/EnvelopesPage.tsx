@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useStore, selectActiveSim, getEffortTotal, isContributionCoherent } from '../../store/useStore'
+import { useStore, selectActiveSim } from '../../store/useStore'
 import { formatEur } from '../../utils/format'
 import NumberInput from '../ui/NumberInput'
 import { runSimulation } from '../../engine/simulation'
@@ -601,8 +601,6 @@ export default function EnvelopesPage({
   const { envelopes, globalParams } = activeSim
   const { updateGlobalParams } = store
 
-  const effort = getEffortTotal(activeSim)
-  const coherent = isContributionCoherent(activeSim)
   const contributionSum = envelopes.reduce((s, e) => s + e.monthlyContribution, 0)
 
   // Open/collapsed groups
@@ -630,7 +628,7 @@ export default function EnvelopesPage({
           <button
             className="btn btn-primary btn-sm"
             onClick={onRunSimulation}
-            disabled={isRunning || !coherent}
+            disabled={isRunning}
             style={!isDirty && !isRunning ? { opacity: 0.6, cursor: 'default' } : undefined}
           >
             {isRunning
@@ -728,12 +726,12 @@ export default function EnvelopesPage({
 
           {/* Indicateur cumulé */}
           <div className="row" style={{ gap: 8, padding: '0 4px' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: coherent ? 'var(--success)' : 'var(--warning)', flexShrink: 0 }} />
-            <span className="mono" style={{ fontSize: 13, color: coherent ? 'var(--ink)' : 'var(--warning)', fontWeight: 500 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} />
+            <span className="mono" style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>
               {formatEur(contributionSum)}/mois
             </span>
-            <span style={{ fontSize: 11, color: coherent ? 'var(--ink-tertiary)' : 'var(--warning)' }}>
-              {coherent ? 'versements · équilibré' : `écart de ±${formatEur(Math.abs(contributionSum - effort))}`}
+            <span style={{ fontSize: 11, color: 'var(--ink-tertiary)' }}>
+              versements
             </span>
           </div>
         </div>
