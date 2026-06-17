@@ -2,10 +2,12 @@ import { useState } from 'react'
 import staticBanksRaw from '../../data/banks.json'
 import BankCard from './BankCard'
 import BankCompareOverlay from './BankCompareOverlay'
+import AddBankModal from './AddBankModal'
+import { useCustomBanks } from '../../store/useCustomBanks'
 import type { Bank, BankType } from '../../types/data'
 import type { EnvelopeFees, EnvelopeType } from '../../types'
 
-const allBanks = staticBanksRaw as Bank[]
+const staticBanks = staticBanksRaw as Bank[]
 
 const TYPE_FILTERS: { value: BankType | 'all'; label: string }[] = [
   { value: 'all',                   label: 'Tous' },
@@ -30,6 +32,12 @@ export default function BanksTab({ feesImport, onApplyFees }: Props) {
   const [filterType, setFilterType] = useState<BankType | 'all'>('all')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [showCompare, setShowCompare] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [editingBank, setEditingBank] = useState<Bank | null>(null)
+
+  const { banks: customBanks, add, update, remove } = useCustomBanks()
+  const customIds = new Set(customBanks.map(b => b.id))
+  const allBanks = [...staticBanks, ...customBanks]
 
   const targetEnvKey = feesImport ? toEnvKey(feesImport.envelopeType) : null
 
@@ -46,6 +54,30 @@ export default function BanksTab({ feesImport, onApplyFees }: Props) {
           ? [...prev, id]
           : prev
     )
+  }
+
+  function handleDelete(bank: Bank) {
+    if (window.confirm(`Supprimer le courtier "${bank.name}" ?`)) {
+      remove(bank.id)
+      setSelectedIds(prev => prev.filter(id => id !== bank.id))
+    }
+  }
+
+  function openAdd() {
+    setEditingBank(null)
+    setShowAddModal(true)
+  }
+
+  function openEdit(bank: Bank) {
+    setEditingBank(bank)
+    setShowAddModal(true)
+  }
+
+  function handleSave(bank: Bank) {
+    if (editingBank) update(editingBank.id, bank)
+    else add(bank)
+    setShowAddModal(false)
+    setEditingBank(null)
   }
 
   return (
@@ -77,31 +109,35 @@ export default function BanksTab({ feesImport, onApplyFees }: Props) {
           ))}
         </div>
 
-        {!feesImport && (
-          <div className="ml-auto flex items-center gap-2">
-            {selectedIds.length > 0 && selectedIds.length < 2 && (
-              <span className="text-[11px] text-muted/60 hidden sm:inline">
-                Sélectionnez encore {2 - selectedIds.length} pour comparer
-              </span>
-            )}
-            {selectedIds.length >= 2 && (
-              <button
-                onClick={() => setShowCompare(true)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple/10 text-purple border border-purple/20 hover:bg-purple/20 transition-colors"
-              >
-                Comparer ({selectedIds.length})
-              </button>
-            )}
-            {selectedIds.length > 0 && (
-              <button
-                onClick={() => setSelectedIds([])}
-                className="text-xs text-muted hover:text-foreground transition-colors"
-              >
-                Effacer
-              </button>
-            )}
-          </div>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {!feesImport && selectedIds.length > 0 && selectedIds.length < 2 && (
+            <span className="text-[11px] text-muted/60 hidden sm:inline">
+              Sélectionnez encore {2 - selectedIds.length} pour comparer
+            </span>
+          )}
+          {!feesImport && selectedIds.length >= 2 && (
+            <button
+              onClick={() => setShowCompare(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple/10 text-purple border border-purple/20 hover:bg-purple/20 transition-colors"
+            >
+              Comparer ({selectedIds.length})
+            </button>
+          )}
+          {!feesImport && selectedIds.length > 0 && (
+            <button
+              onClick={() => setSelectedIds([])}
+              className="text-xs text-muted hover:text-foreground transition-colors"
+            >
+              Effacer
+            </button>
+          )}
+          <button
+            onClick={openAdd}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border text-muted hover:text-foreground hover:border-purple/40 transition-colors"
+          >
+            + Ajouter
+          </button>
+        </div>
       </div>
 
       {/* Grille de cartes */}
@@ -116,6 +152,9 @@ export default function BanksTab({ feesImport, onApplyFees }: Props) {
               onToggleSelect={() => handleToggle(bank.id)}
               defaultEnvTab={targetEnvKey ?? undefined}
               onApplyFees={targetEnvKey && onApplyFees ? onApplyFees : undefined}
+              isCustom={customIds.has(bank.id)}
+              onEdit={() => openEdit(bank)}
+              onDelete={() => handleDelete(bank)}
             />
           ))}
         </div>
@@ -125,6 +164,14 @@ export default function BanksTab({ feesImport, onApplyFees }: Props) {
         <BankCompareOverlay
           banks={allBanks.filter((b) => selectedIds.includes(b.id))}
           onClose={() => setShowCompare(false)}
+        />
+      )}
+
+      {showAddModal && (
+        <AddBankModal
+          initial={editingBank ?? undefined}
+          onSave={handleSave}
+          onClose={() => { setShowAddModal(false); setEditingBank(null) }}
         />
       )}
     </div>

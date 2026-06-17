@@ -7,6 +7,9 @@ import type { Asset, Envelope, EnvelopeFees, LifeEvent, MonteCarloResult, Simula
 import DataModal from './components/data/DataModal'
 import OnboardingModal, { type OnboardingResult } from './components/onboarding/OnboardingModal'
 import ProfileScreen from './components/profiles/ProfileScreen'
+import { useTourStore } from './tour/store/useTourStore'
+import WelcomeForm from './tour/components/WelcomeForm'
+import TourController from './tour/components/TourController'
 import {
   getActiveProfileId,
   getActiveProfile,
@@ -21,8 +24,12 @@ import SimulationComparePanel from './components/results/SimulationComparePanel'
 import DashboardPage from './components/pages/DashboardPage'
 import EnvelopesPage from './components/pages/EnvelopesPage'
 import PortfolioOptimizer from './components/optimizer/PortfolioOptimizer'
+import FinancePage from './finance/components/FinancePage'
+import EducationPage from './education/components/EducationPage'
+import BrokersPage from './components/pages/BrokersPage'
+import ModelsReferencePage from './components/pages/ModelsReferencePage'
 
-type AppPage = 'dashboard' | 'envelopes' | 'optimizer' | 'data'
+type AppPage = 'dashboard' | 'envelopes' | 'optimizer' | 'data' | 'finance' | 'education' | 'brokers' | 'models'
 
 interface RunState {
   envelopes: Envelope[]
@@ -73,7 +80,6 @@ const Svg = ({ d, s = 16, sw = 1.5, fill = 'none', children, className = '', sty
 const IconHome     = (p: { size?: number }) => <Svg s={p.size}><path d="M2.5 7.2 8 2.8l5.5 4.4" /><path d="M3.7 6.6V13h8.6V6.6" /></Svg>
 const IconLayers   = (p: { size?: number }) => <Svg s={p.size}><path d="M8 2.2 14 5 8 7.8 2 5z" /><path d="M2.4 8 8 10.6 13.6 8" /><path d="M2.4 11 8 13.6 13.6 11" /></Svg>
 const IconSpark    = (p: { size?: number; className?: string }) => <Svg s={p.size} className={p.className}><path d="M2.5 11 6 6.5l2.6 2.2L13.5 3" /><path d="M10.4 3h3.1v3.1" /></Svg>
-const IconDatabase = (p: { size?: number }) => <Svg s={p.size}><ellipse cx="8" cy="3.6" rx="5" ry="1.8" /><path d="M3 3.6v8.8c0 1 2.24 1.8 5 1.8s5-.8 5-1.8V3.6" /><path d="M3 8c0 1 2.24 1.8 5 1.8s5-.8 5-1.8" /></Svg>
 const IconSearch   = (p: { size?: number }) => <Svg s={p.size}><circle cx="7" cy="7" r="4.3" /><path d="m10.4 10.4 3 3" /></Svg>
 const IconChevronD = (p: { size?: number; className?: string }) => <Svg s={p.size} className={p.className}><path d="M3.5 6 8 10.5 12.5 6" /></Svg>
 const IconPlus     = (p: { size?: number }) => <Svg s={p.size}><path d="M8 3.2v9.6M3.2 8h9.6" /></Svg>
@@ -81,6 +87,10 @@ const IconPlay     = (p: { size?: number }) => <Svg s={p.size} fill="currentColo
 const IconExport   = (p: { size?: number }) => <Svg s={p.size}><path d="M8 2.5v6.5M5.4 6.6 8 9.2l2.6-2.6" /><path d="M3 11v1.5h10V11" /></Svg>
 const IconClose    = (p: { size?: number }) => <Svg s={p.size}><path d="M4 4l8 8M12 4l-8 8" /></Svg>
 const IconUser     = (p: { size?: number }) => <Svg s={p.size}><circle cx="8" cy="5.5" r="2.6" /><path d="M3.2 13.2a4.8 4.8 0 0 1 9.6 0" /></Svg>
+const IconDollar   = (p: { size?: number }) => <Svg s={p.size}><path d="M8 1.5v13" /><path d="M11 4H6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H4.5" /></Svg>
+const IconGraduate = (p: { size?: number }) => <Svg s={p.size}><path d="M2 6.5 8 4l6 2.5-6 2.5z" /><path d="M5 8.2V12c0 1 1.34 1.8 3 1.8s3-.8 3-1.8V8.2" /><path d="M14 6.5v3.5" /></Svg>
+const IconBank     = (p: { size?: number }) => <Svg s={p.size}><path d="M2 13h12" /><path d="M3 13V7" /><path d="M6.5 13V7" /><path d="M9.5 13V7" /><path d="M13 13V7" /><path d="M1.5 7h13L8 2z" /></Svg>
+const IconSigma    = (p: { size?: number }) => <Svg s={p.size}><path d="M12 3H4l4.5 5L4 13h8" /></Svg>
 
 // ── Command Palette ──────────────────────────────────────────────────────────
 
@@ -93,11 +103,10 @@ interface Cmd {
 }
 
 function CommandPalette({
-  close, go, openData, openOnboarding, runSim,
+  close, go, openOnboarding, runSim,
 }: {
   close: () => void
   go: (p: AppPage) => void
-  openData: () => void
   openOnboarding: () => void
   runSim: () => void
 }) {
@@ -110,9 +119,12 @@ function CommandPalette({
     { group: 'Navigation', icon: <IconHome size={16} />, label: 'Aller au tableau de bord', kbd: 'G D', run: () => go('dashboard') },
     { group: 'Navigation', icon: <IconLayers size={16} />, label: 'Aller aux enveloppes', kbd: 'G E', run: () => go('envelopes') },
     { group: 'Navigation', icon: <IconSpark size={16} />, label: 'Aller à l\'optimiseur', kbd: 'G O', run: () => go('optimizer') },
+    { group: 'Navigation', icon: <IconDollar size={16} />, label: 'Aller à Finance', kbd: 'G F', run: () => go('finance') },
+    { group: 'Navigation', icon: <IconGraduate size={16} />, label: 'Aller à Éducation', kbd: 'G U', run: () => go('education') },
+    { group: 'Navigation', icon: <IconBank size={16} />, label: 'Aller aux Courtiers', kbd: 'G B', run: () => go('brokers') },
+    { group: 'Navigation', icon: <IconSigma size={16} />, label: 'Aller aux Modèles & Formules', kbd: 'G M', run: () => go('models') },
     { group: 'Actions', icon: <IconPlay size={16} />, label: 'Lancer la simulation', kbd: '⌘ ↵', run: runSim },
     { group: 'Actions', icon: <IconPlus size={16} />, label: 'Ajouter une enveloppe', run: () => go('envelopes') },
-    { group: 'Actions', icon: <IconDatabase size={16} />, label: 'Ouvrir la banque de données', run: openData },
     { group: 'Actions', icon: <IconSpark size={16} />, label: 'Optimiser le portefeuille', run: () => go('optimizer') },
     { group: 'Actions', icon: <IconUser size={16} />, label: 'Refaire la configuration', run: openOnboarding },
     { group: 'Export', icon: <IconExport size={16} />, label: 'Exporter CSV', run: () => {} },
@@ -171,10 +183,11 @@ function CommandPalette({
 // ── Profile Dropdown ─────────────────────────────────────────────────────────
 
 function ProfileDropdown({
-  close, onStartOnboarding, profileName, profileInitials, profileColor,
+  close, onStartOnboarding, onRestartTour, profileName, profileInitials, profileColor,
 }: {
   close: () => void
   onStartOnboarding: () => void
+  onRestartTour: () => void
   profileName: string
   profileInitials: string
   profileColor: string
@@ -240,6 +253,10 @@ function ProfileDropdown({
 
         {/* Actions */}
         <div style={{ borderTop: '1px solid var(--hairline)', padding: '6px 0' }}>
+          <div className="cmd-row" onClick={() => { onRestartTour(); close() }} style={{ margin: '1px 6px' }}>
+            <span className="ci" style={{ display: 'flex' }}><IconSpark size={15} /></span>
+            <span>Relancer le tutoriel</span>
+          </div>
           <div className="cmd-row" onClick={() => { onStartOnboarding(); close() }} style={{ margin: '1px 6px' }}>
             <span className="ci" style={{ display: 'flex' }}><IconUser size={15} /></span>
             <span>Reconfigurer le profil</span>
@@ -275,16 +292,19 @@ export default function App() {
   const activeSim = selectActiveSim(store)
   const { envelopes, globalParams, isDirty, events } = activeSim
 
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    const profile = getActiveProfile()
-    return profile ? !profile.onboarded : false
-  })
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const tourStore = useTourStore()
+
+  // Show WelcomeForm only for new profiles (not yet onboarded)
+  // Existing profiles (onboarded=true) go straight to TourController
+  const profileOnboarded = getActiveProfile()?.onboarded ?? false
+  const tourReady = tourStore.formCompleted || profileOnboarded
   const [comparePanelOpen, setComparePanelOpen] = useState(false)
   const [dataModalOpen, setDataModalOpen] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const [showEnvelopeSelector, setShowEnvelopeSelector] = useState(false)
   const [capModalOpen, setCapModalOpen] = useState(false)
-  const [capModalDismissed, setCapModalDismissed] = useState(false)
+  const [_capModalDismissed, setCapModalDismissed] = useState(false)
   const [capReachedByEnvelope, setCapReachedByEnvelope] = useState<Record<string, number>>({})
   const [feesImportTarget, setFeesImportTarget] = useState<{
     envelopeId: string; envelopeType: Envelope['type']; envelopeLabel: string
@@ -318,6 +338,10 @@ export default function App() {
       if (meta && e.key === '1') { e.preventDefault(); navigateTo('dashboard') }
       if (meta && e.key === '2') { e.preventDefault(); navigateTo('envelopes') }
       if (meta && e.key === '3') { e.preventDefault(); navigateTo('optimizer') }
+      if (meta && e.key === '4') { e.preventDefault(); navigateTo('finance') }
+      if (meta && e.key === '5') { e.preventDefault(); navigateTo('education') }
+      if (meta && e.key === '6') { e.preventDefault(); navigateTo('brokers') }
+      if (meta && e.key === '7') { e.preventDefault(); navigateTo('models') }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -463,46 +487,43 @@ export default function App() {
           <span className="kbd">⌘K</span>
         </div>
 
-        {/* Main nav */}
+        {/* Transverse pages — independent of any simulation */}
         <nav className="col" style={{ gap: 1, marginTop: 4 }}>
           <div
-            className={`nav-item${currentPage === 'dashboard' ? ' on' : ''}`}
-            onClick={() => navigateTo('dashboard')}
+            className={`nav-item${currentPage === 'finance' ? ' on' : ''}`}
+            onClick={() => navigateTo('finance')}
           >
-            <IconHome size={16} />
-            <span className="grow">Tableau de bord</span>
+            <IconDollar size={16} />
+            <span className="grow">Finance</span>
+            <span className="live-dot dot" style={{ background: 'var(--success)', width: 6, height: 6 }} />
           </div>
           <div
-            className={`nav-item${currentPage === 'envelopes' ? ' on' : ''}`}
-            onClick={() => navigateTo('envelopes')}
+            className={`nav-item${currentPage === 'education' ? ' on' : ''}`}
+            onClick={() => navigateTo('education')}
           >
-            <IconLayers size={16} />
-            <span className="grow">Enveloppes</span>
-            {isDirty && <span className="dot" style={{ background: 'var(--primary)', width: 6, height: 6 }} />}
+            <IconGraduate size={16} />
+            <span className="grow">Éducation</span>
           </div>
           <div
-            className={`nav-item${currentPage === 'optimizer' ? ' on' : ''}`}
-            onClick={() => navigateTo('optimizer')}
+            className={`nav-item${currentPage === 'brokers' ? ' on' : ''}`}
+            onClick={() => navigateTo('brokers')}
           >
-            <IconSpark size={16} />
-            <span className="grow">Optimiseur</span>
+            <IconBank size={16} />
+            <span className="grow">Courtiers</span>
+          </div>
+          <div
+            className={`nav-item${currentPage === 'models' ? ' on' : ''}`}
+            onClick={() => navigateTo('models')}
+          >
+            <IconSigma size={16} />
+            <span className="grow">Modèles</span>
           </div>
         </nav>
 
-        {/* Banque de données */}
-        <div
-          className={`nav-item${currentPage === 'data' ? ' on' : ''}`}
-          onClick={() => navigateTo('data')}
-          style={{ marginTop: 1 }}
-        >
-          <IconDatabase size={16} />
-          <span className="grow">Banque de données</span>
-          <span className="live-dot dot" style={{ background: 'var(--success)', width: 6, height: 6 }} />
-        </div>
-
-        {/* Simulations section */}
-        <div className="simulations-section" style={{ marginTop: 4 }}>
-          <div className="row" style={{ padding: '18px 18px 6px' }}>
+        {/* Simulations section — divider + list with nested sub-pages for active sim */}
+        <div className="simulations-section scroll" style={{ flex: 1 }}>
+          <div className="divider" style={{ margin: '8px 16px' }} />
+          <div className="row" style={{ padding: '0 18px 6px' }}>
             <span className="eyebrow grow">Simulations</span>
             <button
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: 4, color: 'var(--ink-tertiary)', display: 'flex' }}
@@ -513,22 +534,62 @@ export default function App() {
             </button>
           </div>
           <div className="col" style={{ gap: 1 }}>
-            {simulations.map(sim => (
-              <div
-                key={sim.id}
-                className={`nav-item${sim.id === activeSim.id ? ' on' : ''}`}
-                onClick={() => setActiveSimulation(sim.id)}
-                title={`${sim.globalParams.duration} ans`}
-              >
-                <span className="dot" style={{
-                  background: sim.id === activeSim.id ? 'var(--primary-hover)' : 'var(--hairline-strong)',
-                  width: 6, height: 6,
-                }} />
-                <span className="grow" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {sim.name}
-                </span>
-              </div>
-            ))}
+            {simulations.map(sim => {
+              const isActive = sim.id === activeSim.id
+              return (
+                <div key={sim.id}>
+                  <div
+                    className={`nav-item${isActive ? ' on' : ''}`}
+                    onClick={() => { if (!isActive) { setActiveSimulation(sim.id); navigateTo('dashboard') } }}
+                    title={`${sim.globalParams.duration} ans`}
+                  >
+                    <span className="dot" style={{
+                      background: isActive ? 'var(--primary-hover)' : 'var(--hairline-strong)',
+                      width: 6, height: 6,
+                    }} />
+                    <span className="grow" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {sim.name}
+                    </span>
+                  </div>
+                  {isActive && (
+                    <div style={{
+                      margin: '1px 8px 2px 20px',
+                      paddingLeft: 8,
+                      borderLeft: '1px solid var(--hairline-strong)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                    }}>
+                      <div
+                        className={`nav-item${currentPage === 'dashboard' ? ' on' : ''}`}
+                        style={{ margin: 0 }}
+                        onClick={() => navigateTo('dashboard')}
+                      >
+                        <IconHome size={16} />
+                        <span className="grow">Tableau de bord</span>
+                      </div>
+                      <div
+                        className={`nav-item${currentPage === 'envelopes' ? ' on' : ''}`}
+                        style={{ margin: 0 }}
+                        onClick={() => navigateTo('envelopes')}
+                      >
+                        <IconLayers size={16} />
+                        <span className="grow">Enveloppes</span>
+                        {isDirty && <span className="dot" style={{ background: 'var(--primary)', width: 6, height: 6 }} />}
+                      </div>
+                      <div
+                        className={`nav-item${currentPage === 'optimizer' ? ' on' : ''}`}
+                        style={{ margin: 0 }}
+                        onClick={() => navigateTo('optimizer')}
+                      >
+                        <IconSpark size={16} />
+                        <span className="grow">Optimiseur</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -558,21 +619,16 @@ export default function App() {
             onRunSimulation={handleRunSimulation}
             onImportFees={handleImportFees}
             onAddEnvelope={() => setShowEnvelopeSelector(true)}
-            onOpenData={() => navigateTo('data')}
+            onOpenData={() => navigateTo('brokers')}
             capReachedByEnvelope={Object.keys(capReachedByEnvelope).length > 0 ? capReachedByEnvelope : undefined}
             onOpenCapModal={() => setCapModalOpen(true)}
           />
         )}
         {currentPage === 'optimizer' && <PortfolioOptimizer />}
-        {currentPage === 'data' && (
-          <DataModal
-            onClose={() => navigateTo('dashboard')}
-            onUseAsset={handleUseAsset}
-            activeEnvelopes={envelopes.filter(e => e.active).map(e => ({ id: e.id, label: e.label, type: e.type }))}
-            feesImport={undefined}
-            onApplyFees={undefined}
-          />
-        )}
+        {currentPage === 'finance' && <FinancePage />}
+        {currentPage === 'education' && <EducationPage onGoToFinance={() => navigateTo('finance')} />}
+        {currentPage === 'brokers' && <BrokersPage />}
+        {currentPage === 'models' && <ModelsReferencePage />}
       </div>
 
       {/* ── Overlays ─────────────────────────────────────────────────────── */}
@@ -580,7 +636,6 @@ export default function App() {
         <CommandPalette
           close={() => setPaletteOpen(false)}
           go={navigateTo}
-          openData={() => { navigateTo('data'); setPaletteOpen(false) }}
           openOnboarding={() => { setShowOnboarding(true); setPaletteOpen(false) }}
           runSim={() => { handleRunSimulation(); setPaletteOpen(false) }}
         />
@@ -590,6 +645,7 @@ export default function App() {
         <ProfileDropdown
           close={() => setProfileDropdownOpen(false)}
           onStartOnboarding={() => { setShowOnboarding(true) }}
+          onRestartTour={() => { tourStore.resetAllTours(); navigateTo('envelopes') }}
           profileName={profileName}
           profileInitials={profileInitials}
           profileColor={profileColor}
@@ -630,6 +686,10 @@ export default function App() {
           onClose={() => setShowEnvelopeSelector(false)}
         />
       )}
+
+      {/* ── Tour system ──────────────────────────────────────────────────── */}
+      {!tourReady && <WelcomeForm />}
+      {tourReady && <TourController currentPage={currentPage} onNavigateTo={navigateTo} />}
 
       {toast && (
         <div className="no-print toast-enter" style={{

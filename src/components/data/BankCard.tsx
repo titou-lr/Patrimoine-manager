@@ -9,6 +9,9 @@ interface Props {
   onToggleSelect: () => void
   onApplyFees?: (fees: EnvelopeFees) => void
   defaultEnvTab?: EnvKey
+  isCustom?: boolean
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
 type EnvKey = 'pea' | 'cto' | 'assurance_vie' | 'per'
@@ -26,7 +29,7 @@ const TYPE_LABELS: Record<string, string> = {
   'banque-traditionnelle': 'Traditionnel',
 }
 
-export default function BankCard({ bank, selected, canSelect, onToggleSelect, onApplyFees, defaultEnvTab }: Props) {
+export default function BankCard({ bank, selected, canSelect, onToggleSelect, onApplyFees, defaultEnvTab, isCustom, onEdit, onDelete }: Props) {
   const [activeEnv, setActiveEnv] = useState<EnvKey>(defaultEnvTab ?? 'pea')
 
   const envData = bank.envelopes[activeEnv]
@@ -40,7 +43,14 @@ export default function BankCard({ bank, selected, canSelect, onToggleSelect, on
       {/* En-tête banque */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-medium text-sm text-foreground">{bank.name}</div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium text-sm text-foreground">{bank.name}</span>
+            {isCustom && (
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-purple/10 text-purple border border-purple/20">
+                perso
+              </span>
+            )}
+          </div>
           <div className="text-[10px] text-muted mt-0.5">{TYPE_LABELS[bank.type] ?? bank.type}</div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -93,6 +103,24 @@ export default function BankCard({ bank, selected, canSelect, onToggleSelect, on
           ))}
         </div>
       </div>
+
+      {/* Edit / delete pour courtiers personnalisés (hors mode import) */}
+      {isCustom && !onApplyFees && (
+        <div className="flex gap-1.5">
+          <button
+            onClick={onEdit}
+            className="flex-1 py-1.5 rounded-xl border border-border text-[10px] text-muted hover:text-foreground hover:border-purple/40 transition-colors"
+          >
+            Modifier
+          </button>
+          <button
+            onClick={onDelete}
+            className="flex-1 py-1.5 rounded-xl border border-border text-[10px] text-danger/60 hover:text-danger hover:border-danger/40 transition-colors"
+          >
+            Supprimer
+          </button>
+        </div>
+      )}
 
       {onApplyFees ? (
         <button

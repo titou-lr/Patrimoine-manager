@@ -30,7 +30,7 @@ export function generateAlerts(
   const active = envelopes.filter((e) => e.active)
   const lastResult = results[results.length - 1]
   const tmi = globalParams.tmi ?? 30
-  const effort = (globalParams.monthlyIncome * globalParams.investmentRate) / 100
+
   const nowMs = Date.now()
 
   // ── Priority 1 — Warnings critiques ──────────────────────────────────────

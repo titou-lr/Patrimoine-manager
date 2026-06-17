@@ -250,7 +250,7 @@ export default function DashboardPage({
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="spread" style={{ marginBottom: 22 }}>
+        <div className="spread" style={{ marginBottom: 22 }} data-tour-id="dashboard-header">
           <div>
             <div className="row gap8" style={{ marginBottom: 4 }}>
               <h1 className="headline">Tableau de bord</h1>
@@ -276,7 +276,7 @@ export default function DashboardPage({
         </div>
 
         {/* ── KPI row ────────────────────────────────────────────────────── */}
-        <div className="kpi-row" style={{ padding: '16px 0 22px', borderTop: '1px solid var(--hairline)', borderBottom: '1px solid var(--hairline)', marginBottom: 24 }}>
+        <div className="kpi-row" style={{ padding: '16px 0 22px', borderTop: '1px solid var(--hairline)', borderBottom: '1px solid var(--hairline)', marginBottom: 24 }} data-tour-id="kpi-strip">
           <KPI
             label="Capital à terme"
             value={formatEur(last.totalNominal)}
@@ -291,10 +291,12 @@ export default function DashboardPage({
         </div>
 
         {/* ── SmartAlerts ────────────────────────────────────────────────── */}
-        <SmartAlerts results={results} onNavigate={onGoToEnvelopes} />
+        <div data-tour-id="smart-alerts-panel">
+          <SmartAlerts results={results} onNavigate={onGoToEnvelopes} />
+        </div>
 
         {/* ── Hero chart panel with tabs ──────────────────────────────────── */}
-        <div className="panel" style={{ padding: '18px 20px 14px', marginBottom: 24 }}>
+        <div className="panel" style={{ padding: '18px 20px 14px', marginBottom: 24 }} data-tour-id="chart-main-panel">
 
           {/* Panel header */}
           <div className="spread" style={{ marginBottom: 10 }}>
@@ -308,7 +310,7 @@ export default function DashboardPage({
                 : chartTab === 'fees' ? 'Impact des frais'
                 : 'Bilan net de patrimoine'}
             </div>
-            <div className="seg">
+            <div className="seg" data-tour-id="chart-tabs-seg">
               {CHART_TABS.map(t => (
                 <button key={t.id} className={chartTab === t.id ? 'on' : ''} onClick={() => setChartTab(t.id)}>
                   {t.label}
@@ -348,7 +350,7 @@ export default function DashboardPage({
         </div>
 
         {/* ── Répartition grid (2 columns) ───────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24, alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24, alignItems: 'stretch' }} data-tour-id="allocation-grid">
           <div className="panel" style={{ padding: 20 }}>
             <div className="title" style={{ marginBottom: 16 }}>Répartition par enveloppe</div>
             <AllocationPieChart results={results} envelopes={envelopes} />

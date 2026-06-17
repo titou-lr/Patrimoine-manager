@@ -9,6 +9,7 @@ Repo Git : `git@github.com:titou-lr/Patrimoine-manager.git`
 - **TypeScript ~6.0** (typage strict)
 - **Tailwind CSS v4** (styling utility-first, design tokens custom)
 - **Recharts 3** (graphiques)
+- **KaTeX 0.17** (rendu de formules mathématiques LaTeX — page Modèles & Formules)
 - **Zustand 5** + persist (state global + localStorage)
 - **Electron 42** (packaging desktop optionnel)
 - Pas de backend, pas de DB — tout en mémoire/localStorage
@@ -27,11 +28,12 @@ patrimoine-sim/
 ├── assets/icon.svg              # Icône app
 └── src/
     ├── main.tsx
-    ├── App.tsx                  # Racine — sidebar fixe, navigation 4 pages, RunState, modales
+    ├── App.tsx                  # Racine — sidebar fixe, navigation 8 pages, RunState, modales, TourController
     ├── profiles/
     │   └── profileService.ts    # CRUD profils localStorage — getProfiles(), getStoreKey()
     ├── store/
-    │   └── useStore.ts          # Zustand persist — clé dynamique par profil, simulations[], undo/redo
+    │   ├── useStore.ts          # Zustand persist — clé dynamique par profil, simulations[], undo/redo
+    │   └── useCustomBanks.ts    # Courtiers personnalisés — CRUD + persist par profil (patrimoine-custom-banks-[profileId])
     ├── types/
     │   ├── index.ts             # Types TS principaux (Envelope, SimulationResult, LifeEvent, Liability…)
     │   └── data.ts              # Types données marché (MarketAsset, Bank…)
@@ -61,7 +63,9 @@ patrimoine-sim/
     │   │   └── SimulationDropdown.tsx # Sélecteur simulation (mobile/header)
     │   ├── pages/
     │   │   ├── DashboardPage.tsx    # Page résultats — KPIs, 8 onglets graphiques, SmartAlerts, HistoryPanel
-    │   │   └── EnvelopesPage.tsx    # Page config enveloppes — grille + chips params + bouton Run
+    │   │   ├── EnvelopesPage.tsx    # Page config enveloppes — grille + chips params + bouton Run
+    │   │   ├── BrokersPage.tsx      # Page Courtiers — comparateur enrichi, wrapper autour de BanksTab
+    │   │   └── ModelsReferencePage.tsx # Page Modèles — 8 sections mathématiques avec rendu KaTeX
     │   ├── profiles/
     │   │   ├── ProfileScreen.tsx     # Écran sélection profil (Netflix-style)
     │   │   └── CreateProfileModal.tsx # Modal création profil 2 étapes
@@ -96,12 +100,12 @@ patrimoine-sim/
     │   ├── alerts/
     │   │   └── SmartAlerts.tsx       # Panel alertes — liste prioritisée (P1 warnings, P2 tips, P3 infos)
     │   ├── data/
-    │   │   ├── DataModal.tsx         # Modal OU page banque de données (3 onglets)
+    │   │   ├── DataModal.tsx         # Modal banque de données (onglet actifs uniquement)
     │   │   ├── AssetsTab.tsx         # Tableau actifs avec filtres, tri, import
-    │   │   ├── BanksTab.tsx          # Liste banques avec filtres et comparaison
-    │   │   ├── BankCard.tsx          # Carte banque avec frais par enveloppe
-    │   │   ├── BankCompareOverlay.tsx # Modal comparatif frais banques
-    │   │   └── ModelsPage.tsx        # Page formules mathématiques — FormulaBlock + InteractiveExample
+    │   │   ├── BanksTab.tsx          # Liste courtiers/banques — filtres, comparaison, courtiers perso
+    │   │   ├── BankCard.tsx          # Carte courtier — frais par enveloppe, badge perso, édition inline
+    │   │   ├── BankCompareOverlay.tsx # Modal comparatif frais multi-courtiers
+    │   │   └── AddBankModal.tsx      # Formulaire création/édition d'un courtier personnalisé
     │   ├── optimizer/
     │   │   └── PortfolioOptimizer.tsx # Page Optimiseur — Black-Litterman, Monte-Carlo, suggestions
     │   ├── onboarding/
@@ -110,8 +114,36 @@ patrimoine-sim/
     │       ├── NumberInput.tsx       # Input numérique avec min/max, suffix, font-mono
     │       ├── FormulaBlock.tsx      # Affichage formule monospace + légende variables
     │       ├── InteractiveExample.tsx # Calculateur interactif (inputs → outputs calculés)
+    │       ├── KatexFormula.tsx      # Rendu LaTeX via KaTeX — props: children (LaTeX string), block, className
     │       ├── GlossaryTooltip.tsx   # Tooltip inline — terme clé → shortDef au survol
     │       └── GlossaryModal.tsx     # Modal glossaire complet — recherche + catégories
+    ├── finance/                     # Module Finance autonome — voir section ## Finance
+    │   ├── types/finance.ts
+    │   ├── store/useFinanceStore.ts
+    │   ├── data/financeAssets.ts
+    │   ├── services/               # priceService, indicatorsService, alertsService
+    │   ├── engine/                 # tradingEngine, backtestEngine, predictionEngine, strategies/
+    │   └── components/             # FinancePage + 6 sous-onglets
+    ├── education/                   # Module Éducation autonome — voir section ## Éducation
+    │   ├── store/useEducationStore.ts # Progression par profil — clé patrimoine-education-[profileId]
+    │   ├── data/
+    │   │   ├── modules.ts           # EDUCATION_MODULES[] — 7 modules (EducationModule, Lesson, Exercise)
+    │   │   ├── marketAnnotations.ts # Annotations graphiques pour les leçons marchés
+    │   │   └── patrimcorpData.ts    # Données fictives PatrimCorp pour l'exercice M-E1
+    │   └── components/
+    │       ├── EducationPage.tsx    # Racine — catalogue → module → leçon → exercice
+    │       └── lessons/             # 29 composants de leçons (Lesson1Inflation, LessonA1AssetClasses…)
+    │           ├── LessonShell.tsx  # Shell partagé (header, barre progression, nav)
+    │           ├── QuizScreen.tsx   # Composant QCM réutilisable
+    │           ├── markets/         # Composants graphiques éducatifs (EduCandleChart, EduIndicatorPanel)
+    │           └── Lesson*.tsx      # Contenu leçon (F/A/E/S/M/P/T series)
+    ├── tour/                        # Système de visite guidée Spotlight
+    │   ├── store/useTourStore.ts    # État tour par profil — clé patrimoine-tour-[profileId]
+    │   ├── steps/                   # Étapes par page : simulationSteps, financeSteps, educationSteps, brokersSteps, modelsSteps
+    │   └── components/
+    │       ├── TourController.tsx   # Orchestrateur — navigation automatique + détection d'actions utilisateur
+    │       ├── SpotlightOverlay.tsx # Overlay visuel — scrim rgba(1,1,2,0.82) + bulle positionnée sur [data-tour-id]
+    │       └── WelcomeForm.tsx      # Formulaire de bienvenue (prénom, âge) déclenché avant le tour
     └── utils/
         ├── format.ts                # formatEur(), formatPct()
         └── exportCSV.ts             # Export résultats en CSV
@@ -208,34 +240,95 @@ patrimoine-sim/
 
 ### Données & glossaire
 - Base d'actifs financiers (ETF, crypto, obligations…) avec cotations live Yahoo/CoinGecko
-- Base de frais par banque (PEA, CTO, AV, PER) — import direct dans enveloppe
+- Base de frais par courtier/banque (PEA, CTO, AV, PER) — import direct dans enveloppe
 - Cache 1h avec fallback silencieux sur données statiques
-- **Onglet "Modèles & Formules"** : 7 sections mathématiques avec formules + calculateurs interactifs
 - **Glossaire financier** (`data/glossary.ts`) — `GLOSSARY_TERMS[]`, 5 catégories, `shortDef` pour tooltip + `fullDef` pour modal
 - `GlossaryTooltip` — wrapper inline pour les termes clés (survol = shortDef)
 - `GlossaryModal` — modal recherchable, navigation par catégorie
 
+### Page Courtiers (src/components/pages/BrokersPage.tsx)
+- Page dédiée au comparateur de courtiers/banques — remplace l'ancien onglet "Banques" du DataModal
+- Wrapper autour de `BanksTab` avec un header descriptif et attribut `data-tour-id` pour le tour
+- `BanksTab` supporte désormais : filtrage par type, mode sélection (max 3 pour comparaison), import de frais dans une enveloppe active, ajout/édition/suppression de courtiers personnalisés
+- `AddBankModal` : formulaire complet — nom, type (courtier/banque-en-ligne/banque-traditionnelle), note /5, pros/cons, frais par enveloppe (PEA, CTO, AV, PER, Livret A/LDDS)
+- **Store** : `useCustomBanks` — courtiers perso stockés sous `patrimoine-custom-banks-[profileId]`, fusionnés avec `banks.json` statique à l'affichage
+
+### Page Modèles & Formules (src/components/pages/ModelsReferencePage.tsx)
+- Page dédiée à la référence mathématique exhaustive de tous les calculs de l'app
+- Navigation latérale fixe (192px) avec 8 sections numérotées :
+  1. Simulation & Épargne (intérêts composés, rendements pondérés, inflation Fisher)
+  2. Fiscalité française (PEA, CTO, Assurance-Vie, PER)
+  3. Retraite & Revenus passifs (règle des 4%, simulation retrait)
+  4. Crédit & Bilan net (formule PMT, amortissement)
+  5. Indicateurs techniques (SMA, EMA, RSI, MACD, Bollinger, ATR, OBV)
+  6. Monte-Carlo & Markov (GBM, Box-Muller, matrice de transition)
+  7. Black-Litterman & CVaR (optimisation portefeuille)
+  8. Métriques de backtest (drawdown, Sharpe, win rate, profit factor)
+- Formules rendues avec `KatexFormula` (LaTeX) et calculateurs interactifs via `InteractiveExample`
+
+### Module Éducation (src/education/)
+
+- **7 modules séquentiels** déverrouillés progressivement (compléter un module débloque le suivant) :
+  1. **Fondamentaux** — Inflation, intérêts composés, risque/rendement, profil investisseur (4 leçons)
+  2. **Allocation d'actifs** — Classes d'actifs, diversification, allocation selon l'âge, rééquilibrage (4 leçons)
+  3. **Enveloppes fiscales** — PEA, Assurance-vie, PER, CTO (4 leçons)
+  4. **Sélectionner ses investissements** — ETF, Obligations, SCPI, Crypto (4 leçons)
+  5. **Lire et analyser un marché** — Chandeliers, tendances/S/R, RSI, MACD, Bollinger/ATR, stratégie live (6 leçons)
+  6. **Gérer son portefeuille dans le temps** — DCA, drawdown, TWR/MWR, biais cognitifs, discipline (5 leçons)
+  7. **Optimiser sa fiscalité** — PFU, tax-loss harvesting, succession, transmission (4 leçons)
+- Total : 29 leçons + 10 exercices (QCM, simulateurs interactifs, exercice pratique sur PatrimCorp)
+- **EducationPage** : catalogue → vue module → vue leçon → exercice ; écran de complétion global après les 7 modules
+- **LessonShell** : shell partagé (header, barre de progression, boutons Précédent/Suivant)
+- **QuizScreen** : composant QCM réutilisable avec correction immédiate
+- **Leçons marchés** : `EduCandleChart` + `EduIndicatorPanel` — graphiques interactifs spécialement adaptés à l'éducation
+- **useEducationStore** : Zustand persist — `moduleProgress: Record<moduleId, ModuleProgress>`, clé `patrimoine-education-[profileId]`
+  - `completeLesson(moduleId, lessonId)` et `completeExercise(moduleId, exerciseId)` déclenchent le déverrouillage automatique
+  - `resetProgress()` — réinitialisation irréversible
+
+### Visite guidée Spotlight (src/tour/)
+
+- **WelcomeForm** : formulaire de bienvenue (prénom, âge) — affiché une seule fois, déclenche le tour de simulation
+- **TourController** : orchestrateur monté dans `App.tsx` — gère la navigation automatique vers la page cible et la détection d'actions utilisateur (ex. clic "Lancer la simulation")
+- **SpotlightOverlay** : overlay visuel — scrim `rgba(1,1,2,0.82)` + bulle de 340px positionnée sur l'élément `[data-tour-id]`
+  - Retry jusqu'à 25× (120ms) si l'élément n'est pas encore monté
+  - Scroll smooth si la cible est hors écran
+  - Positionnement intelligent : en-dessous (préféré), au-dessus (fallback), flottant si aucun espace
+- **Deux phases** de tour :
+  1. **Tour simulation** (`simulationSteps`) — couvre : sidebar, enveloppes, bouton Run, dashboard, optimiseur
+  2. **Tours pages transverses** — Finance, Éducation, Courtiers, Modèles (déclenchés à la première visite de chaque page)
+- **useTourStore** : Zustand persist par profil — clé `patrimoine-tour-[profileId]`
+  - `formCompleted`, `simTourActive/Step/Done`, `pageToursStep/Done`
+  - Actions : `completeForm`, `setSimStep`, `finishSimTour`, `dismissSimTour`, `restartSimTour`, `setPageStep`
+- Intégration via `data-tour-id` attributs sur les éléments cibles (présents dans les composants concernés)
+
 ### UX / Navigation
-- **4 pages** gérées par `currentPage: AppPage` dans `App.tsx` :
-  - `'dashboard'` — résultats + alertes + bilan
-  - `'envelopes'` — configuration
-  - `'optimizer'` — optimiseur Black-Litterman
-  - `'data'` — DataModal naviguée comme page pleine (plus de modal flottante pour l'accès principal)
-- **Sidebar fixe** `position: fixed; width: 224px` — toujours visible
+- **8 pages** gérées par `currentPage: AppPage` dans `App.tsx`, avec deux niveaux visuels dans la sidebar :
+  - **Pages transverses** (haut de sidebar, toujours accessibles) : `'finance'`, `'education'`, `'brokers'`, `'models'`
+  - **Pages simulation** (bloc sous la simulation active) : `'dashboard'`, `'envelopes'`, `'optimizer'`
+  - `'data'` — DataModal réduit à l'onglet actifs (conservé pour compatibilité)
+- **Sidebar fixe** `position: fixed; width: 224px` — toujours visible, deux sections distinctes (transverse / simulation)
 - **CommandPalette** (Cmd+K) — recherche d'actions, navigation clavier
 - **ProfileDropdown** intégré dans App.tsx (WorkspaceSwitch dans la sidebar)
+- **TourController** monté au niveau App — orchestrateur du tour guidé Spotlight
 - Point bleu/orange dans l'onglet Enveloppes quand `isDirty`
-- Point vert « live » sur l'onglet Banque de données
 - Onboarding wizard → création enveloppes adaptées au profil (prudent/équilibré/dynamique)
+- **Onboarding Spotlight** → visite guidée interactive pour les nouveaux utilisateurs (WelcomeForm → TourController)
 - Thème sombre, design tokens CSS Linear-inspired, responsive
 - Export CSV + impression (PDF navigateur)
-- Raccourcis : Ctrl+Z / Ctrl+Y (undo/redo), Cmd+1/2/3 (navigation pages), Cmd+K (palette)
+- Raccourcis : `Ctrl+Z` / `Ctrl+Y` (undo/redo), `Cmd+1/2/3` (Dashboard/Enveloppes/Optimiseur), `Cmd+4/5/6/7` (Finance/Éducation/Courtiers/Modèles), `Cmd+K` (palette)
+- Raccourcis palette : `G D/E/O/F/U/B/M` — navigation vers chaque page
 - Toast notifications (3 s) pour les actions utilisateur
 
 ### Profils
 - Profils stockés dans `patrimoine-profiles` (localStorage)
 - Profil actif en sessionStorage — effacé à la fermeture du navigateur
 - Données par profil : `patrimoine-data-[profileId]`
+
+**Clés localStorage supplémentaires par profil** :
+- `patrimoine-finance` — store Finance (non profileé, commun)
+- `patrimoine-education-[profileId]` — progression éducation (useEducationStore)
+- `patrimoine-tour-[profileId]` — état visite guidée (useTourStore)
+- `patrimoine-custom-banks-[profileId]` — courtiers personnalisés (useCustomBanks)
 
 ## Types centraux (src/types/index.ts)
 
@@ -474,21 +567,28 @@ Les résultats de simulation ne sont **pas** recalculés en continu. Le flux est
 ## Navigation (AppPage)
 
 ```ts
-type AppPage = 'dashboard' | 'envelopes' | 'optimizer' | 'data'
+type AppPage = 'dashboard' | 'envelopes' | 'optimizer' | 'data' | 'finance' | 'education' | 'brokers' | 'models'
 ```
 
+**Pages transverses** (sidebar haut, toujours accessibles) :
+- **`'finance'`** → `FinancePage` — marchés temps réel, trading paper, backtest, IA (Cmd+4 / G F)
+- **`'education'`** → `EducationPage` — 7 modules de cours interactifs (Cmd+5 / G U)
+- **`'brokers'`** → `BrokersPage` — comparateur de courtiers, import de frais (Cmd+6 / G B)
+- **`'models'`** → `ModelsReferencePage` — référence mathématique complète avec KaTeX (Cmd+7 / G M)
+
+**Pages simulation** (sidebar bas, sous la simulation active) :
 - **`'dashboard'`** → `DashboardPage` — résultats, 8 onglets, alertes, bilan
 - **`'envelopes'`** → `EnvelopesPage` — config enveloppes + paramètres globaux
 - **`'optimizer'`** → `PortfolioOptimizer` — optimisation Black-Litterman/CVaR
-- **`'data'`** → `DataModal` rendu comme page (sans overlay) — actifs, banques, modèles
 
-**CommandPalette (Cmd+K)** : navigation clavier, lancer simulation, ouvrir banque de données, onboarding.
+**CommandPalette (Cmd+K)** : navigation clavier, lancer simulation, onboarding.
 
 **Raccourcis clavier** :
 - `Cmd+K` — ouvrir la palette de commandes
 - `Cmd+Z` / `Cmd+Y` — undo/redo
-- `Cmd+1/2/3` — navigation Dashboard/Enveloppes/Optimiseur
-- `G D` / `G E` / `G O` — navigation via CommandPalette
+- `Cmd+1` / `Cmd+2` / `Cmd+3` — Dashboard / Enveloppes / Optimiseur
+- `Cmd+4` / `Cmd+5` / `Cmd+6` / `Cmd+7` — Finance / Éducation / Courtiers / Modèles
+- `G D` / `G E` / `G O` / `G F` / `G U` / `G B` / `G M` — navigation via palette
 
 ## Dashboard — Onglets (`ChartTab`)
 
@@ -579,9 +679,200 @@ npm run electron:build   # build prod → installeur NSIS dans dist-electron/
 - **Output** : `dist-electron/` (NSIS Windows, DMG Mac, AppImage Linux)
 - **`"type": "module"`** dans package.json — `electron/main.js` reste en CommonJS (`require()`)
 
+## Éducation (src/education/)
+
+Page dédiée à la formation financière progressive — 6ème page de l'app (`'education'`), accessible via Cmd+5 ou `G U` dans la palette.
+
+### Modules et leçons
+
+| # | Module | Leçons | Exercices | Format | Durée |
+|---|--------|--------|-----------|--------|-------|
+| 1 | Les Fondamentaux | 4 (f-l1 à f-l4) | 1 QCM | qcm | 25 min |
+| 2 | Allocation d'actifs | 4 (a-l1 à a-l4) | 2 (construire + QCM) | mix | 35 min |
+| 3 | Enveloppes fiscales françaises | 4 (e-l1 à e-l4) | 1 QCM situationnel | qcm | 35 min |
+| 4 | Sélectionner ses investissements | 4 (s-l1 à s-l4) | 2 (ETF + QCM) | mix | 40 min |
+| 5 | Lire et analyser un marché | 6 (m-l1 à m-l6) | 1 exercice PatrimCorp | interactive | 60 min |
+| 6 | Gérer son portefeuille dans le temps | 5 (p-l1 à p-l5) | 1 scénario de crise | interactive | 45 min |
+| 7 | Optimiser sa fiscalité | 4 (t-l1 à t-l4) | 1 stratégie transmission | mix | 45 min |
+
+**Total** : 29 leçons + 10 exercices
+
+### Store (useEducationStore)
+
+Clé persist : **`patrimoine-education-[profileId]`** (par profil).
+
+```ts
+interface ModuleProgress {
+  status: 'locked' | 'in_progress' | 'completed'
+  completedLessons: string[]      // IDs ex. 'f-l1', 'a-l2'
+  completedExercises: string[]    // IDs ex. 'f-e1'
+}
+```
+
+- `moduleProgress: Record<moduleId, ModuleProgress>`
+- Module 1 (`fundamentals`) démarré par défaut — les autres `locked`
+- Déverrouillage automatique : compléter un module passe le suivant à `in_progress`
+- `completeLesson(moduleId, lessonId)` / `completeExercise(moduleId, exerciseId)` / `resetProgress()`
+
+### Données
+
+- **`modules.ts`** — `EDUCATION_MODULES[]` : 7 objets `EducationModule` (id, order, title, topics, format, estimatedMinutes, color, lessons[], exercises[])
+- **`marketAnnotations.ts`** — annotations visuelles (flèches, labels) sur les graphiques des leçons marchés
+- **`patrimcorpData.ts`** — série OHLCV fictive "PatrimCorp" pour l'exercice pratique `m-e1`
+
+### Règles Éducation
+
+- **Ne pas mélanger** `useEducationStore` avec `useStore` ni `useFinanceStore`
+- **Ne pas renommer** la clé `patrimoine-education-[profileId]` (rupture de persistance)
+- Les IDs de leçons et exercices (`f-l1`, `a-e2`…) sont la référence de progression — ne pas les modifier sans migration
+- L'exercice `m-e1` est auto-complété quand la leçon `m-l6` est terminée (logique dans `EducationPage`)
+
+## Finance (src/finance/)
+
+Page dédiée aux marchés financiers en temps réel — 5ème page de l'app (`'finance'`), accessible via Cmd+4 ou `G F` dans la palette.
+
+### Structure des dossiers
+
+```
+src/finance/
+├── types/finance.ts              # Tous les types TS Finance (FinanceAsset, PriceQuote, Candle, Order, Position, Trade, TradingAccount, TradingStrategy, BacktestConfig, BacktestResult, ScreenerFilter…)
+├── store/useFinanceStore.ts      # Store Zustand dédié — clé persist 'patrimoine-finance'
+├── data/financeAssets.ts         # FINANCE_ASSETS[] — liste statique ~100 actifs (CAC40, S&P500, ETF, crypto, forex, matières premières, obligations)
+├── services/
+│   ├── priceService.ts           # fetchQuotes(), fetchHistorical(), clearPriceCache() — Yahoo Finance API
+│   ├── indicatorsService.ts      # Fonctions pures : sma, ema, rsi, macd, bollinger, atr, obv, annualizedVolatility
+│   └── alertsService.ts          # checkAlerts(), conditionLabel(), conditionDisplay()
+├── engine/
+│   ├── tradingEngine.ts          # executeMarketOrder(), checkPendingOrders(), computeAccountStats(), updatePositionPrices()
+│   ├── backtestEngine.ts         # runBacktest(config, candles) → BacktestResult
+│   ├── predictionEngine.ts       # linearPrediction(), emaPrediction(), monteCarloPrediction() — horizon 30 jours
+│   └── strategies/
+│       ├── index.ts              # STRATEGIES[] + getStrategy(id)
+│       ├── manual.ts             # Ordres manuels (signal hold permanent)
+│       ├── dca.ts                # Dollar-Cost Averaging périodique
+│       ├── smaCrossover.ts       # Croisement SMA court/long
+│       ├── rsiStrategy.ts        # Survente/surachat RSI
+│       ├── bollingerStrategy.ts  # Rebond sur bandes de Bollinger
+│       ├── macdStrategy.ts       # Croisement MACD/signal
+│       └── gridStrategy.ts       # Grid trading par paliers de prix
+└── components/
+    ├── FinancePage.tsx            # Racine — 6 sous-onglets, toast local
+    ├── market/
+    │   ├── MarketTab.tsx          # Watchlist + cotations temps réel + sélection actif
+    │   └── AssetTable.tsx         # Tableau actifs avec quote + variation
+    ├── analysis/
+    │   ├── AnalysisTab.tsx        # Conteneur graphique + indicateurs + prédiction
+    │   ├── CandleChart.tsx        # Graphique OHLCV (Recharts)
+    │   ├── IndicatorPanel.tsx     # Sélecteur + affichage indicateurs techniques
+    │   └── PredictionOverlay.tsx  # Superposition courbe de prédiction
+    ├── trading/
+    │   ├── TradingTab.tsx         # Multi-comptes : sélecteur + portfolio + ordres + backtest
+    │   ├── PortfolioPanel.tsx     # Positions ouvertes + stats compte (P&L, valeur)
+    │   ├── OrderPanel.tsx         # Formulaire ordre (market/limit/stop_loss/take_profit)
+    │   ├── BacktestPanel.tsx      # Config backtest (stratégie, dates, capital) + résultats
+    │   ├── TradeHistory.tsx       # Historique trades fermés
+    │   └── NewAccountModal.tsx    # Création compte de trading (capital, devise, frais)
+    ├── screener/
+    │   └── ScreenerTab.tsx        # Filtre par classe d'actif, variation%, RSI, ATR — tri par signal
+    ├── ai/
+    │   ├── AIChatTab.tsx          # Chat IA financier — appel Anthropic API directement depuis le navigateur
+    │   └── ApiKeyModal.tsx        # Saisie clé API Anthropic (stockée dans store)
+    ├── alerts/
+    │   └── PriceAlertsTab.tsx     # CRUD alertes prix — badge sur l'onglet si alertes déclenchées
+    └── ui/
+        └── FinanceSelect.tsx      # Select stylé pour les filtres Finance
+```
+
+### Sources de données
+
+**Yahoo Finance API** (`/v8/finance/chart/<ticker>`) — seule source de données Finance.
+- Dev (`localhost`) : proxié via Vite `/yahoo-finance` → `https://query1.finance.yahoo.com` pour éviter le CORS
+- Prod/Electron (`file://`) : appel direct (pas de restriction CORS)
+- La logique de sélection est dans `yahooUrl()` dans `priceService.ts`
+- Timeout : 8 000ms (`FETCH_TIMEOUT`)
+- Les erreurs de fetch sont avalées silencieusement — fallback sur cache ou tableau vide
+
+### Cache localStorage
+
+| Clé | Contenu | TTL |
+|-----|---------|-----|
+| `finance-quote-cache` | `PriceCache` — map ticker → `{ quote, fetchedAt }` | 5 min |
+| `finance-hist-cache` | `HistoricalCache` — map `${ticker}-${period}` → `HistoricalData` | 24h |
+
+`clearPriceCache()` supprime les deux clés.
+Quotes fetchées en batches de 10 avec `Promise.allSettled`.
+
+### Store Zustand Finance
+
+Clé persist : **`patrimoine-finance`** (séparé du store principal `patrimoine-data-[profileId]`).
+
+**Champs persistés** : `watchlist`, `priceAlerts`, `aiApiKey`, `autoRefreshInterval`, `tradingAccounts`, `activeTradingAccountId`, `orders`, `positions`, `trades`, `activeStrategyId`, `strategyParams`
+
+**Champs NON persistés** (session only) : `activeTab`, `selectedAssetId`, `autoRefreshEnabled`
+
+`orders`, `positions`, `trades`, `activeStrategyId`, `strategyParams` sont tous des `Record<accountId, T>` — keyed par compte de trading.
+
+`getAssetById(id)` est exportée depuis le store (accès aux assets statiques sans prop drilling).
+
+### Moteurs
+
+**tradingEngine.ts** — fonctions pures, zéro état React :
+- `executeMarketOrder(order, price, account, positions, trades)` → `ExecuteResult` — fill immédiat au prix courant, gère la moyenne d'entrée (buy) et la réalisation du P&L (sell)
+- `checkPendingOrders(pendingOrders, currentPrices, ...)` → déclenche limit/stop_loss/take_profit si condition remplie
+- `computeAccountStats(account, positions, trades, currentPrices)` → `AccountStats` (totalValue, P&L total/non-réalisé/réalisé/jour)
+- `updatePositionPrices(positions, currentPrices)` → recalcule `unrealizedPnL` sur chaque position
+
+**backtestEngine.ts** — `runBacktest(config, candles)` → `BacktestResult` :
+- Pas de look-ahead bias : signal calculé sur `candles[0..i]`, exécution sur `candles[i+1].open`
+- Position unique (flat/long only, pas de short)
+- Métriques : `totalReturn`, `maxDrawdown`, `winRate`, `profitFactor`, `sharpeRatio` (annualisé, risk-free = 0), `buyAndHoldReturn`
+
+**predictionEngine.ts** — 3 modèles, horizon 30 jours, aucune lib externe :
+- `linearPrediction` — régression linéaire sur 90 dernières bougies, IC 95% (confidence 0.55)
+- `emaPrediction` — projection EMA20 avec momentum EMA50 + volatilité (confidence 0.50)
+- `monteCarloPrediction` — GBM 200 trajectoires, Box-Muller, sorties P10/P50/P90 (confidence 0.45)
+
+**strategies/** — chaque stratégie implémente `TradingStrategy.run(candles, params) → Signal` :
+- `manual` : hold permanent (signal toujours `hold`)
+- `dca` : buy périodique selon paramètre fréquence
+- `smaCrossover` : croisement SMA court vs long
+- `rsiStrategy` : achat si RSI < seuil bas, vente si RSI > seuil haut
+- `bollingerStrategy` : achat sous bande inférieure, vente au-dessus bande supérieure
+- `macdStrategy` : croisement MACD line / signal line
+- `gridStrategy` : niveaux de prix fixes, buy si descend d'un palier, sell si monte d'un palier
+
+**indicatorsService.ts** — fonctions pures (zéro effet de bord), retournent `(number | null)[]` aligné sur l'input :
+- `sma(closes, period)`, `ema(closes, period)` (k = 2/(period+1))
+- `rsi(closes, period=14)` (Wilder smoothing)
+- `macd(closes, fast=12, slow=26, signal=9)` → `{ macd, signal, histogram }`
+- `bollinger(closes, period=20, multiplier=2)` → `{ upper, middle, lower }`
+- `atr(candles, period=14)`, `obv(candles)`
+- `annualizedVolatility(closes)` (log returns × √252)
+- `lastValue(arr)` — dernière valeur non-null
+
+### IA (AIChatTab)
+
+- Modèle : **`claude-haiku-3-5`** (hardcodé — ne pas changer, raison : coût)
+- Appel direct navigateur → `https://api.anthropic.com/v1/messages` avec header `anthropic-dangerous-direct-browser-access: true`
+- Clé API saisie par l'utilisateur via `ApiKeyModal`, stockée dans le store (persistée)
+- Contexte injecté dans le system prompt : actif sélectionné, position ouverte (P&L), valeur compte
+- Historique limité à 10 messages (`MAX_HISTORY`)
+- max_tokens : 1024
+
+### Règles Finance
+
+- **Ne pas changer le modèle IA** — `claude-haiku-3-5` est intentionnel (coût faible)
+- **Ne pas ajouter de lib externe** pour les indicateurs ou le backtest — tout est en fonctions pures
+- **Ne pas renommer les clés cache** `finance-quote-cache` / `finance-hist-cache` (rupture de persistance)
+- **Ne pas renommer la clé store** `patrimoine-finance` (rupture de persistance)
+- **Ne pas mélanger** le store Finance (`useFinanceStore`) avec le store principal (`useStore`)
+- **Ne pas casser la logique proxy** dans `yahooUrl()` — le switch dev/prod est nécessaire pour le CORS et pour Electron
+- Les positions/ordres/trades sont indexés par `accountId` — toujours utiliser `store.positions[accountId] ?? []`
+- Le screener, la prédiction et les alertes prix sont **sans état serveur** — tout se calcule côté client à la demande
+
 ## Ce que Claude Code NE doit PAS faire
-- Pas de fetch/API externe (sauf `marketDataService` existant)
-- Pas de router (single page, 4 pages gérées par `currentPage` state dans `App.tsx`)
+- Pas de fetch/API externe (sauf `marketDataService` existant et `priceService` Finance)
+- Pas de router (single page, 8 pages gérées par `currentPage` state dans `App.tsx`)
 - Pas d'authentification
 - Pas de tests (hors scope)
 - Ne pas recréer les fichiers de config existants
@@ -591,6 +882,11 @@ npm run electron:build   # build prod → installeur NSIS dans dist-electron/
 - Ne pas oublier le 3ème argument `events` dans les appels à `runSimulation()`
 - Ne pas modifier `monthlyContribution` dans le store pour gérer les plafonds — utiliser uniquement `capRedirectTo` sur l'enveloppe source et la logique 2-passes dans `simulation.ts`
 - Ne pas remettre `capModalDismissed` à `false` dans `handleRunSimulation` directement — utiliser le paramètre `capDismissed` passé en argument (bug corrigé : le state `capModalDismissed` est mis à `true` uniquement via `onClose` du modal)
+- **Éducation** : ne pas mélanger `useEducationStore` avec `useStore` ni `useFinanceStore` — stores séparés et indépendants
+- **Éducation** : ne pas modifier les IDs de leçons/exercices (`f-l1`, `a-e2`…) sans prévoir une migration de progression
+- **Tour** : ne pas supprimer les attributs `data-tour-id` des éléments cibles — ils sont requis par `SpotlightOverlay`
+- **Tour** : ne pas renommer la clé store `patrimoine-tour-[profileId]` (rupture de persistance)
+- **Courtiers perso** : ne pas renommer la clé `patrimoine-custom-banks-[profileId]` (rupture de persistance)
 
 ## Knowledge Graph (Graphify)
 

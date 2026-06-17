@@ -213,6 +213,7 @@ function Group({ env, open, toggle, selected, onOpenDetail, effort, capReachedYe
           className="btn btn-ghost btn-icon btn-sm"
           onClick={e => { e.stopPropagation(); onOpenDetail(env.id) }}
           title="Paramètres"
+          data-tour-id="envelope-settings-btn"
         >
           <IcSliders />
         </button>
@@ -622,7 +623,7 @@ export default function EnvelopesPage({
       <div className="content">
 
         {/* ── SubheadBar ─────────────────────────────────────────────── */}
-        <div className="subhead-bar">
+        <div className="subhead-bar" data-tour-id="envelopes-subheadbar">
           <h1 className="title" style={{ fontSize: 15 }}>Enveloppes</h1>
           <span className="badge">{envelopes.length}</span>
           <div className="grow" />
@@ -631,6 +632,7 @@ export default function EnvelopesPage({
             onClick={onRunSimulation}
             disabled={isRunning}
             style={!isDirty && !isRunning ? { opacity: 0.6, cursor: 'default' } : undefined}
+            data-tour-id="run-simulation-btn"
           >
             {isRunning
               ? <><IcRefresh className="spin" /> Calcul…</>
@@ -673,6 +675,7 @@ export default function EnvelopesPage({
         {/* ── FilterChips (global params) ────────────────────────────── */}
         <div
           className="row"
+          data-tour-id="filter-chips-bar"
           style={{ height: 44, padding: '0 20px', borderBottom: '1px solid var(--hairline)', background: 'var(--canvas)', flexShrink: 0, position: 'relative', gap: 0 }}
           onClick={e => {
             if (!(e.target as HTMLElement).closest('[data-popover]')) setActivePopover(null)
@@ -738,7 +741,7 @@ export default function EnvelopesPage({
         </div>
 
         {/* ── Envelope list ──────────────────────────────────────────── */}
-        <div className="scroll" style={{ flex: 1, padding: '16px 20px 40px' }}>
+        <div className="scroll" style={{ flex: 1, padding: '16px 20px 40px' }} data-tour-id="envelopes-list-area">
 
           {/* Column headers */}
           <div className="row" style={{ padding: '0 14px 8px', gap: 12 }}>
@@ -774,6 +777,7 @@ export default function EnvelopesPage({
           <button
             className="lrow"
             onClick={onAddEnvelope}
+            data-tour-id="add-envelope-btn"
             style={{
               width: '100%', border: '1px dashed var(--hairline-strong)',
               borderRadius: 'var(--r-lg)', background: 'transparent',

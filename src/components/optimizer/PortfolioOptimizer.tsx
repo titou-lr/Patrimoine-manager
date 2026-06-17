@@ -290,7 +290,7 @@ export default function PortfolioOptimizer() {
   const IcCheck  = () => <svg width={14} height={14} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3.2 8.4 6.4 11.6 12.8 4.6" /></svg>
 
   return (
-    <div style={{ flex: 1, display: 'flex', minWidth: 0, overflow: 'hidden', height: '100%' }}>
+    <div style={{ flex: 1, display: 'flex', minWidth: 0, overflow: 'hidden', height: '100%' }} data-tour-id="optimizer-page">
 
       {/* Main content */}
       <div className="content">
@@ -317,7 +317,7 @@ export default function PortfolioOptimizer() {
         <div className="grid grid-cols-2 gap-4">
 
           {/* Régime économique — pleine largeur */}
-          <div className="col-span-2 bg-surface border border-border rounded-2xl p-4">
+          <div className="col-span-2 bg-surface border border-border rounded-2xl p-4" data-tour-id="optimizer-regime">
             <div className="flex items-center gap-3 mb-3">
               <h3 className="text-sm font-semibold text-foreground">Régime économique actuel</h3>
               <span className="text-[10px] text-muted">(laisser vide = probabilités historiques)</span>
@@ -497,7 +497,7 @@ export default function PortfolioOptimizer() {
           </div>
 
           {/* Bouton Lancer — pleine largeur */}
-          <div className="col-span-2">
+          <div className="col-span-2" data-tour-id="optimizer-run-btn">
             <button
               onClick={handleOptimize}
               disabled={running || activeEnvelopes.length === 0}
