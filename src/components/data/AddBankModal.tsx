@@ -321,7 +321,7 @@ export default function AddBankModal({ initial, onSave, onClose }: Props) {
                   <div className="flex items-center gap-1.5">
                     <input
                       type="number"
-                      value={(env as Record<string, number>)[field]}
+                      value={(env as unknown as Record<string, number>)[field]}
                       min={0}
                       step={field === 'minOrder' ? 1 : 0.01}
                       onChange={e => patchEnv(activeEnv, { [field]: parseFloat(e.target.value) || 0 } as Partial<EnvFormState>)}
