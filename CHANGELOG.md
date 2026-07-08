@@ -6,6 +6,37 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.2] — 2026-07-08
+
+### Fixed — Menus déroulants illisibles (blanc sur blanc)
+
+- **`color-scheme: dark`** déclaré sur `:root` — les contrôles natifs (popup des `<option>`, calendrier des `input date`, scrollbars) sont désormais rendus en thème sombre par le navigateur au lieu du blanc système
+- **Style global `select` / `option`** dans `index.css` (sélecteur au niveau élément) : fond `--surface-2`, texte `--ink`, hairline — tout futur `<select>` de n'importe quel module est lisible par défaut ; les selects déjà stylés par classe (`.btn…`) ou style inline gardent la priorité
+- **Alias `--bg-elevated` défini** dans `:root` (`#141516`) — utilisé par ~12 fichiers de styles inline mais jamais défini (seul `--color-elevated` existait via le bridge `@theme`), les fonds retombaient en transparent
+
+### Added — Versements périodiques automatiques (Patrimoine)
+
+- **`PatrimoineMetadata.versementPeriodique`** : `{ montant, frequence: monthly|quarterly|annual, prochaineDate, actif }` — catégories financières uniquement
+- **`computeVersementsEnAttente(asset, now)`** (`engine/patrimoineEngine.ts`) — compte les intervalles écoulés depuis `prochaineDate` (date système, clamp fin de mois, ancrage sans dérive, garde-fou 600 intervalles) et recalcule la prochaine date
+- **`applyVersementsEnAttente()`** (store) — applique les versements dus (`currentValue += total`, `prochaineDate` avancée, `lastUpdatedAt`) ; retourne `{ updated, totalApplied, nbVersements }` ; **aucun snapshot automatique**
+- UI : section « Versements périodiques » dans le formulaire d'actif financier (toggle, montant, fréquence, date) ; toast au lancement « X versements appliqués — +Y € sur Z actifs »
+
+### Added — Prix de marché automatiques par ticker (Patrimoine)
+
+- **`PatrimoineMetadata`** : `ticker` (Yahoo Finance, ex. `EWLD.PA`, `BTC-EUR`), `quantite`, `prixUnitaire` (readonly, calculé), `lastPriceFetchAt` — si ticker + quantité renseignés, `currentValue = prixUnitaire × quantite`
+- **`engine/priceFetcher.ts`** — `fetchPrixActifs(assets)` : réutilise **exactement** `fetchQuotes()` du module Finance (même API Yahoo, proxy Vite dev, cache `finance-quote-cache` 5 min, échecs silencieux) + TTL propre 1 h sur `lastPriceFetchAt` ; aucune nouvelle dépendance
+- **`refreshPrixMarche()`** (store) — met à jour prix et valeurs ; hors ligne : fail silencieux, dernière valeur connue conservée
+- **Bloc d'initialisation unique** au mount d'`App.tsx` : `applyVersementsEnAttente()` puis `refreshPrixMarche()` (pattern `generateRecurringTransactions`, pas de useEffect réactif dispersé)
+- UI : badge « ● Prix en direct » sur la ligne d'actif (date du dernier fetch au survol)
+
+### Added — Lien passifs ↔ budget (proposition post-import)
+
+- **`PatrimoineLiability.linkedBudgetCategoryId`** — pointe vers une `BudgetCategory`, purement informatif, aucune écriture croisée automatique
+- Formulaire de passif : sélecteur « Catégorie budget associée » (lecture seule sur `useBudgetStore`)
+- **`CsvImportModal`** : après confirmation d'un import, si des dépenses importées correspondent à une catégorie liée à un passif → carte de proposition « N remboursements détectés (total X €). Mettre à jour l'encours de [passif] ? » avec boutons **Mettre à jour** / **Ignorer** ; `upsertLiability()` uniquement sur clic explicite — seul pont autorisé entre les deux stores
+
+---
+
 ## [1.3.1] — 2026-07-08
 
 ### Changed — Succession en page transverse autonome

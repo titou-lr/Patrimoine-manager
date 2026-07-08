@@ -153,7 +153,9 @@ patrimoine-sim/
     │   ├── types/patrimoine.ts      # PatrimoineAsset (14 catégories), PatrimoineLiability (5), PatrimoineSnapshot…
     │   ├── data/patrimoineCategories.ts # ASSET_CATEGORY_META, LIABILITY_CATEGORY_META — labels/groupes/couleurs (source unique)
     │   ├── store/usePatrimoineStore.ts  # Zustand persist — clé patrimoine-actuel-[profileId] + bénéficiaires/donations succession
-    │   ├── engine/patrimoineEngine.ts   # computePatrimoineNet(), computeLTV(), computeEmergencyCoverage(), buildTimelineFromSnapshots(), computeTopMovers()
+    │   │                                #   + applyVersementsEnAttente() / refreshPrixMarche() (init au mount d'App.tsx)
+    │   ├── engine/patrimoineEngine.ts   # computePatrimoineNet(), computeLTV(), computeEmergencyCoverage(), buildTimelineFromSnapshots(), computeTopMovers(), computeVersementsEnAttente()
+    │   ├── engine/priceFetcher.ts       # fetchPrixActifs() — réutilise fetchQuotes() du module Finance, TTL 1h/actif
     │   ├── ai/coachEngine.ts        # Coach IA — COACH_TOOLS, buildCoachContext(), sanitizeProposedEvents(), compareScenarios()
     │   ├── succession/
     │   │   ├── successionEngine.ts  # Droit fiscal FR 2024 — abattementParLien(), baremeSuccession(), rappelFiscalDonations(), exonerationAssuranceVie(), computeSuccession()
@@ -720,6 +722,9 @@ Tokens CSS dans `src/index.css` :
 - Régimes : `--c-expansion`, `--c-overheat`, `--c-recession`, `--c-crisis`
 
 Bridge Tailwind (`@theme` block) : mappe les anciens tokens (bg-elevated, text-foreground, etc.) pour ne pas casser les composants legacy.
+`--bg-elevated` (`#141516`) est aussi défini comme **var CSS dans `:root`** — utilisé par de nombreux styles inline, ne pas le supprimer.
+
+**Contrôles natifs (v1.3.2)** : `color-scheme: dark` est déclaré sur `:root` (popup des `<option>`, calendrier date, scrollbars rendus sombres par le navigateur) + style global `select` / `option` au niveau élément dans `index.css` (fond `--surface-2`, texte `--ink`). Tout `<select>` est lisible par défaut ; les selects stylés par classe ou inline gardent la priorité. **Ne pas supprimer ces règles** (retour du bug blanc-sur-blanc).
 
 **Règle** : toujours utiliser les classes CSS (`.btn`, `.panel`, `.kpi`, `.nav-item`, `.cmd-row`…) plutôt que les utilitaires Tailwind couleur. Les couleurs viennent des vars CSS.
 
@@ -1002,6 +1007,10 @@ Clé persist : **`patrimoine-finance`** (séparé du store principal `patrimoine
 - **Patrimoine** : ne pas mélanger `usePatrimoineStore` avec `useStore`, `useBudgetStore` ni `useFinanceStore` — aucune écriture croisée automatique entre stores
 - **Patrimoine** : ne pas renommer la clé `patrimoine-actuel-[profileId]` (rupture de persistance)
 - **Patrimoine** : ne jamais appeler `takeSnapshot()` automatiquement — action utilisateur explicite uniquement
+- **Patrimoine** : `applyVersementsEnAttente()` et `refreshPrixMarche()` sont appelés UNE fois au mount initial d'`App.tsx` (bloc unique ordonné) — ne pas les déplacer dans des useEffect réactifs dispersés, ne pas les déclencher sur un timer
+- **Patrimoine** : pour les prix de marché, ne pas dupliquer la logique Yahoo — tout passe par `fetchQuotes()` de `finance/services/priceService` via `patrimoine/engine/priceFetcher.ts`
+- **Patrimoine/Budget** : `linkedBudgetCategoryId` est purement informatif ; la mise à jour d'encours post-import passe TOUJOURS par la carte Mettre à jour / Ignorer de `CsvImportModal` — jamais d'`upsertLiability()` automatique
+- **Design** : ne pas supprimer `color-scheme: dark`, le style global `select`/`option` ni la var `--bg-elevated` de `index.css` (retour du bug selects blanc-sur-blanc / fonds transparents)
 - **Coach IA** : ne jamais appliquer les événements proposés par le modèle sans passer par la carte de confirmation Confirmer/Annuler ; toute proposition passe par `sanitizeProposedEvents()`
 
 ## Budget (src/budget/)
@@ -1199,7 +1208,7 @@ Signature : `generateBudgetAlerts(snapshot, envelopes, categories, transactions,
 
 | Composant | Rôle |
 |---|---|
-| `src/budget/components/import/CsvImportModal.tsx` | Wizard 3-4 étapes : upload (CSV/XLSX/XLS, drag-and-drop) → [sélection de feuille si xlsx multi-feuilles] → mapping colonnes + sélection ligne d'en-tête + mode débit/crédit → preview doublons grisés → import |
+| `src/budget/components/import/CsvImportModal.tsx` | Wizard 3-4 étapes : upload (CSV/XLSX/XLS, drag-and-drop) → [sélection de feuille si xlsx multi-feuilles] → mapping colonnes + sélection ligne d'en-tête + mode débit/crédit → preview doublons grisés → import. Après import : `LiabilityUpdateProposals` — si des dépenses importées matchent une catégorie liée à un passif (`PatrimoineLiability.linkedBudgetCategoryId`), carte « N remboursements détectés (total X €). Mettre à jour l'encours ? » avec boutons Mettre à jour / Ignorer ; `upsertLiability()` uniquement sur clic explicite (seul pont Budget → Patrimoine autorisé) ; les transactions importées sont capturées au confirm (avant recalcul des hashs) |
 | `src/budget/components/recurring/RecurringRulesPanel.tsx` | Règles actives (CRUD inline) + Suggestions détectées (Analyser → state local → Confirmer/Ignorer) |
 | `src/budget/components/forecast/CashflowForecastChart.tsx` | Recharts `ComposedChart` — barres revenus/dépenses + ligne pointillée solde net + badge confidence |
 
@@ -1247,11 +1256,22 @@ Clé persist : **`patrimoine-actuel-[profileId]`** (par profil).
 
 Champs : `assets: PatrimoineAsset[]`, `liabilities: PatrimoineLiability[]`, `snapshots: PatrimoineSnapshot[]` (max **120**, FIFO), `beneficiaires: Beneficiaire[]`, `donations: DonationHistorique[]` (paramétrage succession).
 
-Actions : `upsertAsset/removeAsset`, `upsertLiability/removeLiability`, `takeSnapshot()` (retourne le snapshot créé), `upsertBeneficiaire/removeBeneficiaire`, `upsertDonation/removeDonation` (supprimer un bénéficiaire supprime ses donations).
+Actions : `upsertAsset/removeAsset`, `upsertLiability/removeLiability`, `takeSnapshot()` (retourne le snapshot créé), `applyVersementsEnAttente()`, `refreshPrixMarche()` (async), `upsertBeneficiaire/removeBeneficiaire`, `upsertDonation/removeDonation` (supprimer un bénéficiaire supprime ses donations).
 
 - **Les snapshots ne sont JAMAIS pris automatiquement** — uniquement via `takeSnapshot()` sur action explicite (boutons du dashboard patrimonial)
 - `PatrimoineAsset.linkedEnvelopeId` pointe vers `Envelope.id` — **purement informatif**, aucune écriture croisée entre `usePatrimoineStore` et `useStore`
-- `metadata: Record<string, string | number>` — champs spécifiques par catégorie (immobilier : `adresse`, `surface`, `loyerMensuel`, `encoursCredit`, `dateAcquisition`, `valeurAcquisition` ; bancaire : `etablissement`, `iban`)
+- `PatrimoineLiability.linkedBudgetCategoryId` pointe vers `BudgetCategory.id` — **purement informatif** ; seul pont : la proposition post-import de relevé bancaire (voir section Budget), résolue par clic explicite
+- `metadata: PatrimoineMetadata` — champs spécifiques par catégorie (immobilier : `adresse`, `surface`, `loyerMensuel`, `encoursCredit`, `dateAcquisition`, `valeurAcquisition` ; bancaire : `etablissement`, `iban`) + champs typés des catégories financières (`group === 'financier'`) :
+  - `versementPeriodique?: { montant, frequence: 'monthly'|'quarterly'|'annual', prochaineDate: 'YYYY-MM-DD', actif } | null`
+  - `ticker?` (Yahoo Finance, ex. `EWLD.PA`, `BTC-EUR`), `quantite?`, `prixUnitaire?` (calculé au fetch, readonly dans le formulaire), `lastPriceFetchAt?` — si `ticker` + `quantite` renseignés, `currentValue = prixUnitaire × quantite` ; sinon saisie manuelle
+
+### Versements périodiques & prix de marché (v1.3.2)
+
+**Initialisation au lancement** — bloc unique au mount initial d'`App.tsx` (pattern `generateRecurringTransactions` du Budget : appel explicite une fois, PAS de useEffect réactif récurrent) :
+1. `applyVersementsEnAttente()` → `{ updated, totalApplied, nbVersements }` — pour chaque actif avec `versementPeriodique.actif`, `computeVersementsEnAttente(asset, now)` (moteur pur) compare `prochaineDate` à la date système, compte les intervalles écoulés (clamp fin de mois, ancrage sans dérive, garde-fou 600), puis le store fait `currentValue += montantTotal` + avance `prochaineDate` ; toast « X versements appliqués — +Y € sur Z actifs » ; **aucun snapshot automatique**
+2. `refreshPrixMarche()` → `{ updated }` — fetch async des actifs avec `ticker` via `engine/priceFetcher.ts` : **réutilise `fetchQuotes()` de `finance/services/priceService`** (même API Yahoo, même proxy dev, même cache `finance-quote-cache` 5 min, échecs avalés) + TTL 1 h par actif sur `lastPriceFetchAt` ; hors ligne = fail silencieux, dernière valeur et `lastPriceFetchAt` conservés
+
+UI : sections « Prix de marché » et « Versements périodiques » dans `PatrimoineItemFormModal` (catégories financières uniquement) ; badge « ● Prix en direct » sur la ligne d'actif de `PatrimoineSaisieTab` (date du dernier fetch au survol) ; valeur actuelle readonly quand calculée depuis le ticker.
 
 ### Catégories
 
@@ -1267,6 +1287,9 @@ Actions : `upsertAsset/removeAsset`, `upsertLiability/removeLiability`, `takeSna
 - `computeEmergencyCoverage(patrimoineNet, monthlyExpenses)` → mois couverts | null — `monthlyExpenses` vient du snapshot budget (`totalExpenses`), passé par le composant
 - `buildTimelineFromSnapshots(snapshots)` → points triés pour Recharts
 - `computeTopMovers(snapshots, assets, count=3)` → variations d'actifs entre les 2 derniers snapshots (via `PatrimoineSnapshot.byAsset`)
+- `computeVersementsEnAttente(asset, now)` → `{ nbVersements, montantTotal, nouvelleProchaineDate }` — versements périodiques dus (voir section Versements périodiques & prix de marché)
+
+**`engine/priceFetcher.ts`** (pas pur : fetch réseau, mais zéro React) : `fetchPrixActifs(assets)` → `Record<assetId, { prix, fetchedAt } | { erreur }>` ; `isPriceFresh()`, `PRICE_FETCH_TTL_MS` (1 h) — ne pas dupliquer la logique Yahoo, tout passe par `fetchQuotes()` du module Finance
 
 ### Dashboard patrimonial (components/pages/DashboardPatrimoinePage.tsx)
 

@@ -28,12 +28,45 @@ export type PatrimoineLiabilityCategory =
   | 'dette_fiscale'
   | 'autre_passif'
 
+/** Fréquence d'un versement périodique automatique */
+export type VersementFrequence = 'monthly' | 'quarterly' | 'annual'
+
+/**
+ * Versement périodique automatique sur un actif financier.
+ * Appliqué au lancement de l'app via applyVersementsEnAttente() —
+ * jamais dans un useEffect réactif récurrent.
+ */
+export interface VersementPeriodique {
+  montant: number
+  frequence: VersementFrequence
+  /** Date ISO (YYYY-MM-DD) du prochain versement à appliquer */
+  prochaineDate: string
+  actif: boolean
+}
+
 /**
  * Champs spécifiques par catégorie, stockés librement.
  * Ex. immobilier : adresse, surface, loyerMensuel, encoursCredit,
  * dateAcquisition, valeurAcquisition. Bancaire/enveloppes : iban, etablissement.
+ *
+ * Champs typés (catégories financières uniquement) :
+ * - versementPeriodique — versements automatiques (Tâche versements)
+ * - ticker / quantite / prixUnitaire / lastPriceFetchAt — prix de marché.
+ *   Si ticker + quantite sont renseignés, currentValue = prixUnitaire × quantite
+ *   (calculé au fetch) ; sinon currentValue reste saisi manuellement.
  */
-export type PatrimoineMetadata = Record<string, string | number>
+export interface PatrimoineMetadata {
+  versementPeriodique?: VersementPeriodique | null
+  /** Ticker Yahoo Finance (ex. "EWLD.PA", "BTC-EUR", "OR=F") */
+  ticker?: string
+  /** Prix unitaire de la dernière mise à jour réussie */
+  prixUnitaire?: number
+  /** Nombre d'unités détenues */
+  quantite?: number
+  /** Date ISO du dernier fetch de prix réussi */
+  lastPriceFetchAt?: string
+  [key: string]: string | number | VersementPeriodique | null | undefined
+}
 
 /** Actif détenu réellement par l'utilisateur aujourd'hui */
 export interface PatrimoineAsset {
@@ -63,6 +96,12 @@ export interface PatrimoineLiability {
   currency: string
   lastUpdatedAt: string
   notes?: string
+  /**
+   * Pointe vers BudgetCategory.id — purement informatif, aucune écriture
+   * croisée automatique. Le seul pont est la proposition post-import du
+   * relevé bancaire, confirmée explicitement par l'utilisateur.
+   */
+  linkedBudgetCategoryId?: string
   metadata?: PatrimoineMetadata
 }
 

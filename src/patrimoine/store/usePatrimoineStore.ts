@@ -11,7 +11,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getActiveProfileId } from '../../profiles/profileService'
-import { computePatrimoineNet } from '../engine/patrimoineEngine'
+import { computePatrimoineNet, computeVersementsEnAttente } from '../engine/patrimoineEngine'
+import { fetchPrixActifs } from '../engine/priceFetcher'
 import type {
   PatrimoineAsset,
   PatrimoineLiability,
@@ -50,6 +51,22 @@ interface PatrimoineState {
    * Jamais appelé automatiquement — uniquement sur action explicite.
    */
   takeSnapshot: () => PatrimoineSnapshot
+
+  /**
+   * Applique les versements périodiques en attente (metadata.versementPeriodique
+   * actif dont prochaineDate est dépassée). Appelé UNE fois au chargement de
+   * l'app (bloc d'initialisation d'App.tsx), jamais dans un useEffect réactif.
+   * Ne prend PAS de snapshot — action utilisateur explicite uniquement.
+   */
+  applyVersementsEnAttente: () => { updated: string[]; totalApplied: number; nbVersements: number }
+
+  /**
+   * Met à jour les prix des actifs avec ticker via l'infrastructure Finance
+   * (fetchPrixActifs). Appelé une fois au chargement, après
+   * applyVersementsEnAttente(). Hors ligne : fail silencieux, la dernière
+   * valeur connue (et lastPriceFetchAt) est conservée.
+   */
+  refreshPrixMarche: () => Promise<{ updated: string[] }>
 
   upsertBeneficiaire: (b: Omit<Beneficiaire, 'id'> & { id?: string }) => void
   removeBeneficiaire: (id: string) => void
@@ -131,6 +148,61 @@ export const usePatrimoineStore = create<PatrimoineState>()(
           snapshots: [...s.snapshots, snapshot].slice(-MAX_SNAPSHOTS),
         }))
         return snapshot
+      },
+
+      applyVersementsEnAttente: () => {
+        const now = new Date()
+        const updated: string[] = []
+        let totalApplied = 0
+        let nbVersements = 0
+        const nextAssets = get().assets.map((a) => {
+          const pending = computeVersementsEnAttente(a, now)
+          if (pending.nbVersements === 0) return a
+          updated.push(a.id)
+          totalApplied += pending.montantTotal
+          nbVersements += pending.nbVersements
+          return {
+            ...a,
+            currentValue: a.currentValue + pending.montantTotal,
+            lastUpdatedAt: now.toISOString(),
+            metadata: {
+              ...a.metadata,
+              versementPeriodique: {
+                ...a.metadata!.versementPeriodique!,
+                prochaineDate: pending.nouvelleProchaineDate,
+              },
+            },
+          }
+        })
+        if (updated.length > 0) set({ assets: nextAssets })
+        return { updated, totalApplied, nbVersements }
+      },
+
+      refreshPrixMarche: async () => {
+        // fetchPrixActifs filtre lui-même : ticker requis + TTL 1h (lastPriceFetchAt)
+        const prices = await fetchPrixActifs(get().assets)
+        const updated: string[] = []
+        const nowIso = new Date().toISOString()
+        const nextAssets = get().assets.map((a) => {
+          const r = prices[a.id]
+          if (!r || 'erreur' in r) return a // échec silencieux — dernière valeur conservée
+          updated.push(a.id)
+          const quantite = Number(a.metadata?.quantite)
+          const hasQuantite = Number.isFinite(quantite) && quantite > 0
+          return {
+            ...a,
+            // ticker + quantite renseignés → currentValue calculé, sinon saisi manuellement
+            currentValue: hasQuantite ? r.prix * quantite : a.currentValue,
+            lastUpdatedAt: hasQuantite ? nowIso : a.lastUpdatedAt,
+            metadata: {
+              ...a.metadata,
+              prixUnitaire: r.prix,
+              lastPriceFetchAt: r.fetchedAt,
+            },
+          }
+        })
+        if (updated.length > 0) set({ assets: nextAssets })
+        return { updated }
       },
 
       upsertBeneficiaire: (b) =>

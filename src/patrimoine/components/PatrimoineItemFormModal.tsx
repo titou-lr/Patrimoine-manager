@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { usePatrimoineStore } from '../store/usePatrimoineStore'
+import { useBudgetStore } from '../../budget/store/useBudgetStore'
 import {
   ASSET_CATEGORY_META,
   LIABILITY_CATEGORY_META,
@@ -13,7 +14,20 @@ import type {
   PatrimoineLiability,
   PatrimoineLiabilityCategory,
   PatrimoineMetadata,
+  VersementFrequence,
+  VersementPeriodique,
 } from '../types/patrimoine'
+
+const FREQUENCE_LABELS: Record<VersementFrequence, string> = {
+  monthly: 'Mensuel',
+  quarterly: 'Trimestriel',
+  annual: 'Annuel',
+}
+
+function todayIso(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 /** Cible du formulaire : création (item absent) ou édition (item présent) */
 export type FormTarget =
@@ -52,6 +66,8 @@ const inputStyle: React.CSSProperties = {
 
 export default function PatrimoineItemFormModal({ target, simulationEnvelopes, onClose }: Props) {
   const { upsertAsset, upsertLiability } = usePatrimoineStore()
+  // Lecture seule sur le store Budget — jamais d'écriture depuis le Patrimoine
+  const budgetCategories = useBudgetStore((s) => s.categories)
   const isAsset = target.kind === 'asset'
   const editing = target.item
 
@@ -70,11 +86,37 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
   const [linkedEnvelopeId, setLinkedEnvelopeId] = useState(
     isAsset ? ((editing as PatrimoineAsset | undefined)?.linkedEnvelopeId ?? '') : ''
   )
+  const [linkedBudgetCategoryId, setLinkedBudgetCategoryId] = useState(
+    !isAsset ? ((editing as PatrimoineLiability | undefined)?.linkedBudgetCategoryId ?? '') : ''
+  )
   const [metadata, setMetadata] = useState<PatrimoineMetadata>(editing?.metadata ?? {})
 
   const assetCat = category as PatrimoineAssetCategory
   const isRealEstate = isAsset && REAL_ESTATE_CATEGORIES.includes(assetCat)
   const isBanking = isAsset && BANKING_CATEGORIES.includes(assetCat)
+  // Catégories financières : versements périodiques + prix de marché par ticker
+  const isFinancial = isAsset && ASSET_CATEGORY_META[assetCat]?.group === 'financier'
+
+  const vp = (metadata.versementPeriodique as VersementPeriodique | null | undefined) ?? null
+
+  function setVp(patch: Partial<VersementPeriodique>) {
+    setMetadata((m) => {
+      const cur = (m.versementPeriodique as VersementPeriodique | null | undefined) ?? {
+        montant: 0, frequence: 'monthly' as VersementFrequence, prochaineDate: todayIso(), actif: false,
+      }
+      return { ...m, versementPeriodique: { ...cur, ...patch } }
+    })
+  }
+
+  // Prix de marché : si ticker + quantité + prix unitaire connus, la valeur est calculée
+  const ticker = String(metadata.ticker ?? '').trim()
+  const quantite = Number(metadata.quantite)
+  const prixUnitaire = Number(metadata.prixUnitaire)
+  const computedValue =
+    isFinancial && ticker && Number.isFinite(quantite) && quantite > 0 &&
+    Number.isFinite(prixUnitaire) && prixUnitaire > 0
+      ? prixUnitaire * quantite
+      : null
 
   function metaStr(key: string): string {
     const v = metadata[key]
@@ -93,21 +135,36 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
     })
   }
 
+  /** true si le versement périodique activé est incomplet (bloque le submit) */
+  const vpInvalid = isFinancial && !!vp?.actif && (!(vp.montant > 0) || !vp.prochaineDate)
+
   function handleSubmit() {
-    if (!label.trim() || currentValue < 0) return
+    if (!label.trim() || currentValue < 0 || vpInvalid) return
     const now = new Date().toISOString()
     if (isAsset) {
+      // Les champs financiers (versements, ticker…) ne suivent pas un
+      // changement de catégorie vers immobilier/alternatif
+      const cleanMeta: PatrimoineMetadata = { ...metadata }
+      if (!isFinancial) {
+        delete cleanMeta.versementPeriodique
+        delete cleanMeta.ticker
+        delete cleanMeta.quantite
+        delete cleanMeta.prixUnitaire
+        delete cleanMeta.lastPriceFetchAt
+      } else if (!ticker) {
+        delete cleanMeta.lastPriceFetchAt
+      }
       upsertAsset({
         id: editing?.id,
         label: label.trim(),
         category: assetCat,
         subcategory: subcategory.trim() || undefined,
-        currentValue,
+        currentValue: computedValue ?? currentValue,
         currency: editing?.currency ?? 'EUR',
         lastUpdatedAt: now,
         notes: notes.trim() || undefined,
         linkedEnvelopeId: linkedEnvelopeId || undefined,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        metadata: Object.keys(cleanMeta).length > 0 ? cleanMeta : undefined,
       })
     } else {
       upsertLiability({
@@ -118,6 +175,7 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
         currency: editing?.currency ?? 'EUR',
         lastUpdatedAt: now,
         notes: notes.trim() || undefined,
+        linkedBudgetCategoryId: linkedBudgetCategoryId || undefined,
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       })
     }
@@ -165,7 +223,14 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
 
           <div className="row gap12">
             <Field label={isAsset ? 'Valeur actuelle (€)' : 'Capital restant dû (€)'}>
-              <input type="number" min={0} value={currentValue || ''} onChange={(e) => setCurrentValue(Number(e.target.value))} style={inputStyle} />
+              <input
+                type="number" min={0}
+                value={computedValue !== null ? Math.round(computedValue * 100) / 100 : (currentValue || '')}
+                onChange={(e) => setCurrentValue(Number(e.target.value))}
+                readOnly={computedValue !== null}
+                title={computedValue !== null ? 'Calculée automatiquement : prix unitaire × quantité' : undefined}
+                style={{ ...inputStyle, ...(computedValue !== null ? { opacity: 0.65, cursor: 'not-allowed' } : {}) }}
+              />
             </Field>
             {isAsset && (
               <Field label="Sous-catégorie (libre)">
@@ -238,6 +303,112 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
             </>
           )}
 
+          {/* ── Prix de marché par ticker (catégories financières) ─────── */}
+          {isFinancial && (
+            <div className="col" style={{
+              gap: 12, padding: '12px 14px', border: '1px solid var(--hairline)',
+              borderRadius: 'var(--r)', background: 'var(--surface-1)',
+            }}>
+              <div className="subhead" style={{ fontSize: 13 }}>Prix de marché (optionnel)</div>
+              <div className="row gap12">
+                <Field label="Ticker Yahoo Finance">
+                  <input value={String(metadata.ticker ?? '')} onChange={(e) => setMeta('ticker', e.target.value)}
+                    style={inputStyle} placeholder="Ex. EWLD.PA, BTC-EUR, OR=F" />
+                </Field>
+                <Field label="Quantité détenue">
+                  <input type="number" min={0} step="any" value={metaStr('quantite')}
+                    onChange={(e) => setMeta('quantite', e.target.value, true)} style={inputStyle} />
+                </Field>
+                <Field label="Prix unitaire (€)">
+                  <input
+                    value={Number.isFinite(prixUnitaire) && prixUnitaire > 0 ? prixUnitaire.toFixed(2) : '—'}
+                    readOnly
+                    title="Mis à jour automatiquement au lancement de l'app"
+                    style={{ ...inputStyle, opacity: 0.65, cursor: 'not-allowed' }}
+                  />
+                </Field>
+              </div>
+              <div className="caption" style={{ fontSize: 11 }}>
+                Si ticker et quantité sont renseignés, la valeur de l'actif est calculée
+                (prix × quantité) et actualisée à chaque lancement de l'app. Sinon elle reste saisie manuellement.
+              </div>
+            </div>
+          )}
+
+          {/* ── Versements périodiques (catégories financières) ────────── */}
+          {isFinancial && (
+            <div className="col" style={{
+              gap: 12, padding: '12px 14px', border: '1px solid var(--hairline)',
+              borderRadius: 'var(--r)', background: 'var(--surface-1)',
+            }}>
+              <label className="row gap8" style={{ alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={vp?.actif ?? false}
+                  onChange={(e) => setVp({ actif: e.target.checked })}
+                  style={{ accentColor: 'var(--primary)' }}
+                />
+                <span className="subhead" style={{ fontSize: 13 }}>Versements périodiques automatiques</span>
+              </label>
+              {vp?.actif && (
+                <>
+                  <div className="row gap12">
+                    <Field label="Montant (€)">
+                      <input type="number" min={0} value={vp.montant || ''}
+                        onChange={(e) => setVp({ montant: Number(e.target.value) })} style={inputStyle} />
+                    </Field>
+                    <Field label="Fréquence">
+                      <select value={vp.frequence} onChange={(e) => setVp({ frequence: e.target.value as VersementFrequence })} style={inputStyle}>
+                        {(Object.keys(FREQUENCE_LABELS) as VersementFrequence[]).map((f) => (
+                          <option key={f} value={f}>{FREQUENCE_LABELS[f]}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Prochain versement">
+                      <input type="date" value={vp.prochaineDate}
+                        onChange={(e) => setVp({ prochaineDate: e.target.value })} style={inputStyle} />
+                    </Field>
+                  </div>
+                  <div className="caption" style={{ fontSize: 11 }}>
+                    Les versements échus sont ajoutés automatiquement à la valeur de l'actif
+                    au lancement de l'app — aucun snapshot n'est pris automatiquement.
+                  </div>
+                  {vpInvalid && (
+                    <div className="caption" style={{ fontSize: 11, color: 'var(--danger)' }}>
+                      Renseignez un montant positif et une date de prochain versement.
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── Catégorie budget associée (passifs) ─────────────────────── */}
+          {!isAsset && (
+            <>
+              <Field label="Catégorie budget associée (informatif)">
+                <select value={linkedBudgetCategoryId} onChange={(e) => setLinkedBudgetCategoryId(e.target.value)} style={inputStyle}>
+                  <option value="">— Aucune liaison —</option>
+                  {budgetCategories
+                    .filter((c) => c.group !== 'income')
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                </select>
+              </Field>
+              {linkedBudgetCategoryId && (
+                <div className="caption" style={{
+                  fontSize: 11.5, color: 'var(--primary-hover)',
+                  padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 'var(--r)',
+                }}>
+                  ℹ Après chaque import de relevé bancaire, les remboursements détectés dans
+                  cette catégorie déclencheront une proposition de mise à jour de l'encours —
+                  appliquée uniquement sur votre confirmation.
+                </div>
+              )}
+            </>
+          )}
+
           <Field label="Notes">
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
               style={{ ...inputStyle, resize: 'none', fontFamily: 'inherit' }} />
@@ -246,7 +417,7 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
 
         <div className="row gap8" style={{ marginTop: 20, justifyContent: 'flex-end' }}>
           <button className="btn btn-secondary btn-sm" onClick={onClose}>Annuler</button>
-          <button className="btn btn-primary btn-sm" onClick={handleSubmit} disabled={!label.trim()}>
+          <button className="btn btn-primary btn-sm" onClick={handleSubmit} disabled={!label.trim() || vpInvalid}>
             {editing ? 'Enregistrer' : 'Ajouter'}
           </button>
         </div>

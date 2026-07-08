@@ -11,6 +11,7 @@ import type {
   PatrimoineNetResult,
   PatrimoineSnapshot,
   PatrimoineTimelinePoint,
+  VersementFrequence,
 } from '../types/patrimoine'
 import { ASSET_CATEGORY_META, REAL_ESTATE_CATEGORIES } from '../data/patrimoineCategories'
 
@@ -130,4 +131,78 @@ export function computeTopMovers(
     })
   }
   return movers.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, count)
+}
+
+// ── Versements périodiques automatiques ─────────────────────────────────────
+
+/** Résultat du calcul des versements en attente d'un actif */
+export interface VersementsEnAttente {
+  nbVersements: number
+  montantTotal: number
+  /** Prochaine date recalculée (YYYY-MM-DD) — inchangée si aucun versement dû */
+  nouvelleProchaineDate: string
+}
+
+const FREQUENCE_MONTHS: Record<VersementFrequence, number> = {
+  monthly: 1,
+  quarterly: 3,
+  annual: 12,
+}
+
+/** Garde-fou : nombre max d'intervalles rattrapés (50 ans de mensuel) */
+const MAX_INTERVALS = 600
+
+/**
+ * Ajoute des mois à une date en clampant le jour au dernier jour du mois
+ * cible (31 janvier + 1 mois = 28/29 février). Toujours calculé depuis la
+ * date d'ancrage d'origine pour éviter la dérive du jour au fil des clamps.
+ */
+function addMonthsClamped(anchor: Date, months: number): Date {
+  const y = anchor.getFullYear()
+  const m = anchor.getMonth() + months
+  const lastDay = new Date(y, m + 1, 0).getDate()
+  return new Date(y, m, Math.min(anchor.getDate(), lastDay))
+}
+
+function toIsoDate(d: Date): string {
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
+}
+
+/**
+ * Calcule les versements périodiques dus sur un actif : compare
+ * metadata.versementPeriodique.prochaineDate à `now` (date système) et
+ * compte les intervalles écoulés. Retourne nbVersements: 0 si le versement
+ * est inactif, mal configuré ou pas encore dû.
+ */
+export function computeVersementsEnAttente(
+  asset: PatrimoineAsset,
+  now: Date
+): VersementsEnAttente {
+  const vp = asset.metadata?.versementPeriodique
+  const none = (date: string): VersementsEnAttente => ({
+    nbVersements: 0,
+    montantTotal: 0,
+    nouvelleProchaineDate: date,
+  })
+  if (!vp || !vp.actif || !(vp.montant > 0) || !vp.prochaineDate) return none(vp?.prochaineDate ?? '')
+
+  const anchor = new Date(`${vp.prochaineDate}T00:00:00`)
+  if (Number.isNaN(anchor.getTime())) return none(vp.prochaineDate)
+
+  const step = FREQUENCE_MONTHS[vp.frequence] ?? 1
+  let nb = 0
+  let next = anchor
+  while (next.getTime() < now.getTime() && nb < MAX_INTERVALS) {
+    nb++
+    next = addMonthsClamped(anchor, nb * step)
+  }
+  if (nb === 0) return none(vp.prochaineDate)
+
+  return {
+    nbVersements: nb,
+    montantTotal: nb * vp.montant,
+    nouvelleProchaineDate: toIsoDate(next),
+  }
 }

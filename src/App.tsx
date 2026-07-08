@@ -32,6 +32,8 @@ import BudgetPage from './budget/components/BudgetPage'
 import DashboardPatrimoinePage from './components/pages/DashboardPatrimoinePage'
 import SuccessionPage from './patrimoine/succession/SuccessionPage'
 import HelpHost from './help/components/HelpHost'
+import { usePatrimoineStore } from './patrimoine/store/usePatrimoineStore'
+import { formatEur } from './utils/format'
 
 type AppPage =
   | 'patrimoine' | 'succession'
@@ -367,6 +369,33 @@ export default function App() {
   function showToast(msg: string) {
     setToast(msg); setTimeout(() => setToast(null), 3000)
   }
+
+  // ── Initialisation patrimoine — bloc unique au mount initial ─────────────
+  // Ordre : 1. versements périodiques en attente, 2. prix de marché (async).
+  // Pas de useEffect réactif récurrent — même pattern que
+  // generateRecurringTransactions() du Budget (appel explicite, une fois).
+  useEffect(() => {
+    if (!getActiveProfileId()) return
+    const { applyVersementsEnAttente, refreshPrixMarche } = usePatrimoineStore.getState()
+
+    const versements = applyVersementsEnAttente()
+    if (versements.updated.length > 0) {
+      const s = versements.nbVersements > 1 ? 's' : ''
+      showToast(
+        `${versements.nbVersements} versement${s} appliqué${s} — ` +
+        `+${formatEur(versements.totalApplied)} sur ${versements.updated.length} actif${versements.updated.length > 1 ? 's' : ''}`
+      )
+    }
+
+    refreshPrixMarche()
+      .then(({ updated }) => {
+        if (updated.length > 0) {
+          showToast(`Prix de marché actualisés — ${updated.length} actif${updated.length > 1 ? 's' : ''}`)
+        }
+      })
+      .catch(() => { /* hors ligne — fail silencieux, dernière valeur conservée */ })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function navigateTo(page: AppPage) {
     setCurrentPage(page); window.scrollTo(0, 0)

@@ -67,6 +67,9 @@ export default function PatrimoineSaisieTab({ simulationEnvelopes, onSnapshotTak
     const badge = freshnessBadge(asset.lastUpdatedAt)
     const ltv = computeLTV(asset)
     const linked = linkedLabel(asset)
+    const ticker = typeof asset.metadata?.ticker === 'string' ? asset.metadata.ticker.trim() : ''
+    const lastFetch = typeof asset.metadata?.lastPriceFetchAt === 'string'
+      ? new Date(asset.metadata.lastPriceFetchAt) : null
     return (
       <div key={asset.id} className="row gap10" style={{
         alignItems: 'center', padding: '10px 14px',
@@ -92,6 +95,17 @@ export default function PatrimoineSaisieTab({ simulationEnvelopes, onSnapshotTak
             )}
           </div>
         </div>
+        {ticker && (
+          <span
+            className="badge"
+            title={lastFetch && !Number.isNaN(lastFetch.getTime())
+              ? `${ticker} — dernier prix le ${lastFetch.toLocaleDateString('fr-FR')} à ${lastFetch.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+              : `${ticker} — aucun prix récupéré pour le moment`}
+            style={{ color: 'var(--primary-hover)', border: '1px solid var(--primary-hover)', fontSize: 10.5 }}
+          >
+            ● Prix en direct
+          </span>
+        )}
         <span className="badge" style={{ color: badge.color, border: `1px solid ${badge.color}`, fontSize: 10.5 }}>
           {badge.label}
         </span>

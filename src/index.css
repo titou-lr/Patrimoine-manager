@@ -47,6 +47,11 @@
    ============================================================ */
 
 :root {
+  /* Indique au navigateur que l'app est sombre : les contrôles natifs
+     (popup des <option>, calendrier des input date, scrollbars) sont rendus
+     en thème sombre au lieu du blanc système. */
+  color-scheme: dark;
+
   /* Surface ladder */
   --canvas:        #010102;
   --surface-1:     #0f1011;
@@ -54,6 +59,10 @@
   --surface-3:     #18191a;
   --surface-4:     #1d1e20;
   --surface-hover: #1a1b1d;
+
+  /* Alias legacy — var(--bg-elevated) est utilisé par de nombreux styles inline
+     mais n'était défini nulle part (seul --color-elevated existe via @theme) */
+  --bg-elevated:   #141516;
 
   /* Hairlines */
   --hairline:        #23252a;
@@ -166,6 +175,26 @@ body {
 .pos      { color: var(--success); }
 .neg      { color: var(--danger); }
 .accent   { color: var(--primary-hover); }
+
+/* ---------- Native form controls ----------
+   Défaut global pour tout <select> de l'app : les éléments natifs n'héritent
+   pas des tokens du thème et tombaient sur les couleurs système (texte blanc
+   sur popup blanche). Sélecteur au niveau élément : toute classe (.btn…) ou
+   style inline existant garde la priorité. */
+select {
+  background-color: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  accent-color: var(--primary);
+}
+select option,
+select optgroup {
+  background-color: var(--surface-2);
+  color: var(--ink);
+}
 
 /* ---------- Buttons ---------- */
 .btn {
