@@ -12,9 +12,9 @@ import {
 } from '../data/regimeData'
 import { getEffectiveTaxRate } from './portfolioOptimizer'
 
-// ─── Déterministic RNG (mulberry32) ─────────────────────────────────────────
+// ─── Déterministic RNG (mulberry32) — source unique, réutilisé par patrimcorpData ─
 
-function mulberry32(seed: number): () => number {
+export function mulberry32(seed: number): () => number {
   let s = seed >>> 0
   return () => {
     s = (s + 0x6D2B79F5) >>> 0
@@ -224,16 +224,6 @@ function runTrajectoryFull(
   }
 
   return { capitals: capitalsByYear, regimes: regimesByYear }
-}
-
-export function runSingleTrajectory(
-  envelopes: Envelope[],
-  globalParams: GlobalParams,
-  duration: number,
-  transitionYear: number,
-  seed: number
-): number[] {
-  return runTrajectoryFull(envelopes, globalParams, duration, transitionYear, seed).capitals
 }
 
 // ─── Monte-Carlo ──────────────────────────────────────────────────────────────

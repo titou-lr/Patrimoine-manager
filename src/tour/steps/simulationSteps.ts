@@ -51,6 +51,15 @@ export const SIMULATION_STEPS: TourStep[] = [
       `Ce bouton ouvre le panneau de configuration : capital initial, versements mensuel et annuel, allocation d'actifs avec leurs rendements attendus, frais de courtage (ou import depuis la base Courtiers), et options avancées (date d'ouverture, horizon de clôture, fréquence de versement).`,
   },
   {
+    id: 'E5b',
+    page: 'envelopes',
+    targetId: 'life-events-section',
+    title: 'Les événements de vie',
+    content: () =>
+      `En bas de page, planifiez les événements qui modifieront votre trajectoire : pause d'épargne, rentrée d'argent exceptionnelle, retrait pour un apport immobilier, naissance d'un enfant… Ils sont injectés mois par mois dans le calcul de la simulation.`,
+    padding: 16,
+  },
+  {
     id: 'E6',
     page: 'envelopes',
     targetId: 'run-simulation-btn',
@@ -63,7 +72,7 @@ export const SIMULATION_STEPS: TourStep[] = [
   // ── Phase 2 : Dashboard ─────────────────────────────────────────────────────
   {
     id: 'S1',
-    page: 'dashboard',
+    page: 'simulation_dashboard',
     targetId: 'dashboard-header',
     title: 'Tableau de bord',
     content: (name) =>
@@ -71,7 +80,7 @@ export const SIMULATION_STEPS: TourStep[] = [
   },
   {
     id: 'S2',
-    page: 'dashboard',
+    page: 'simulation_dashboard',
     targetId: 'kpi-strip',
     title: 'Indicateurs clés',
     content: () =>
@@ -79,7 +88,7 @@ export const SIMULATION_STEPS: TourStep[] = [
   },
   {
     id: 'S3',
-    page: 'dashboard',
+    page: 'simulation_dashboard',
     targetId: 'smart-alerts-panel',
     title: 'Alertes intelligentes',
     content: () =>
@@ -87,15 +96,15 @@ export const SIMULATION_STEPS: TourStep[] = [
   },
   {
     id: 'S4',
-    page: 'dashboard',
+    page: 'simulation_dashboard',
     targetId: 'chart-main-panel',
-    title: '8 onglets d\'analyse',
+    title: '9 onglets d\'analyse',
     content: () =>
-      `Ce panneau propose 8 analyses dédiées : Projection empilée par enveloppe (avec bandes P10/P50/P90 en mode Monte-Carlo), Inflation (valeur réelle vs nominale), Retraite, Immobilier, Capital cible, Sécurité financière, Bilan net et Impact des frais.`,
+      `Ce panneau propose 9 analyses dédiées : Projection empilée par enveloppe (avec bandes P10/P50/P90 en mode Monte-Carlo), Inflation (valeur réelle vs nominale), Retraite, Immobilier, Capital cible, Sécurité financière, Bilan net, Impact des frais et Analyse (benchmark, stress test, revenus passifs).`,
   },
   {
     id: 'S5',
-    page: 'dashboard',
+    page: 'simulation_dashboard',
     targetId: 'chart-tabs-seg',
     title: 'Naviguez entre les analyses',
     content: () =>
@@ -103,7 +112,7 @@ export const SIMULATION_STEPS: TourStep[] = [
   },
   {
     id: 'S6',
-    page: 'dashboard',
+    page: 'simulation_dashboard',
     targetId: 'allocation-grid',
     title: 'Répartition du portefeuille',
     content: () =>

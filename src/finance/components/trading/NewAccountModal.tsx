@@ -13,7 +13,10 @@ export default function NewAccountModal({ onClose }: Props) {
   const [name, setName] = useState('')
   const [capital, setCapital] = useState('')
   const [currency, setCurrency] = useState<'EUR' | 'USD'>('EUR')
+  const [commissionMode, setCommissionMode] = useState<'percent' | 'flat'>('percent')
   const [feeRate, setFeeRate] = useState('0.1')
+  const [commissionFlat, setCommissionFlat] = useState('1')
+  const [slippagePct, setSlippagePct] = useState('0.05')
   const [autoRefresh, setAutoRefresh] = useState(false)
   const [refreshInterval, setRefreshInterval] = useState(30)
 
@@ -29,7 +32,10 @@ export default function NewAccountModal({ onClose }: Props) {
       cashBalance: cap,
       createdAt: Date.now(),
       currency,
-      feeRate: parseFloat(feeRate) / 100,
+      feeRate: (parseFloat(feeRate) || 0) / 100,
+      commissionMode,
+      commissionFlat: parseFloat(commissionFlat) || 0,
+      slippagePct: parseFloat(slippagePct) || 0,
       autoRefreshEnabled: autoRefresh,
       autoRefreshInterval: refreshInterval,
     }
@@ -122,22 +128,79 @@ export default function NewAccountModal({ onClose }: Props) {
             </div>
           </label>
 
-          {/* Frais simulés */}
+          {/* Commissions simulées */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <span className="caption" style={{ fontWeight: 600 }}>
+              Commissions simulées
+              <span
+                title="Frais de courtage appliqués à chaque ordre — pourcentage du montant ou forfait fixe"
+                style={{ marginLeft: 5, cursor: 'help', color: 'var(--ink-subtle)', fontSize: 11 }}
+              >?</span>
+            </span>
+            <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+              <div className="row" style={{ gap: 0, borderRadius: 'var(--r)', overflow: 'hidden', border: '1px solid var(--hairline)' }}>
+                {(['percent', 'flat'] as const).map(m => (
+                  <button
+                    key={m}
+                    onClick={() => setCommissionMode(m)}
+                    style={{
+                      padding: '6px 12px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                      background: commissionMode === m ? 'var(--primary)' : 'var(--bg-elevated)',
+                      color: commissionMode === m ? 'white' : 'var(--ink-subtle)',
+                    }}
+                  >
+                    {m === 'percent' ? '% du montant' : 'Forfait / ordre'}
+                  </button>
+                ))}
+              </div>
+              {commissionMode === 'percent' ? (
+                <input
+                  type="number"
+                  value={feeRate}
+                  onChange={e => setFeeRate(e.target.value)}
+                  min={0}
+                  max={5}
+                  step={0.05}
+                  style={{
+                    background: 'var(--bg-elevated)', border: '1px solid var(--hairline)',
+                    borderRadius: 'var(--r)', padding: '7px 10px', fontSize: 13,
+                    fontFamily: 'var(--font-mono)', color: 'var(--ink)', outline: 'none', width: 80,
+                  }}
+                />
+              ) : (
+                <input
+                  type="number"
+                  value={commissionFlat}
+                  onChange={e => setCommissionFlat(e.target.value)}
+                  min={0}
+                  step={0.5}
+                  style={{
+                    background: 'var(--bg-elevated)', border: '1px solid var(--hairline)',
+                    borderRadius: 'var(--r)', padding: '7px 10px', fontSize: 13,
+                    fontFamily: 'var(--font-mono)', color: 'var(--ink)', outline: 'none', width: 80,
+                  }}
+                />
+              )}
+              <span className="caption">{commissionMode === 'percent' ? '%' : currency === 'USD' ? '$' : '€'}</span>
+            </div>
+          </div>
+
+          {/* Slippage simulé */}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             <span className="caption" style={{ fontWeight: 600 }}>
-              Frais simulés (%)
+              Spread bid-ask simulé (%)
               <span
-                title="Frais de courtage simulés appliqués à chaque ordre"
+                title="Slippage : chaque exécution market paie la moitié de ce spread dans le sens défavorable"
                 style={{ marginLeft: 5, cursor: 'help', color: 'var(--ink-subtle)', fontSize: 11 }}
               >?</span>
             </span>
             <input
               type="number"
-              value={feeRate}
-              onChange={e => setFeeRate(e.target.value)}
+              value={slippagePct}
+              onChange={e => setSlippagePct(e.target.value)}
               min={0}
-              max={5}
-              step={0.05}
+              max={2}
+              step={0.01}
               style={{
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--hairline)',

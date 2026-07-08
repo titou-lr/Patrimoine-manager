@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import { useStore, selectActiveSim, getEffortTotal } from '../../store/useStore'
 import { formatEur } from '../../utils/format'
 import NumberInput from '../ui/NumberInput'
+import LifeEvents from '../tools/LifeEvents'
+import HelpButton from '../../help/components/HelpButton'
 import { runSimulation } from '../../engine/simulation'
 import type { Envelope, Asset, GlobalParams } from '../../types'
 import {
@@ -627,6 +629,7 @@ export default function EnvelopesPage({
           <h1 className="title" style={{ fontSize: 15 }}>Enveloppes</h1>
           <span className="badge">{envelopes.length}</span>
           <div className="grow" />
+          <HelpButton page="simulation" />
           <button
             className="btn btn-primary btn-sm"
             onClick={onRunSimulation}
@@ -787,6 +790,11 @@ export default function EnvelopesPage({
             <IcPlus size={15} />
             <span className="subhead">Ajouter une enveloppe</span>
           </button>
+
+          {/* ── Événements de vie ─────────────────────────────────────── */}
+          <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--hairline)' }} data-tour-id="life-events-section">
+            <LifeEvents />
+          </div>
 
         </div>
       </div>

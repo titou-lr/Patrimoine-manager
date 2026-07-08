@@ -1,24 +1,5 @@
 import type { Candle } from '../../finance/types/finance'
-
-// ─── RNG déterministe (mulberry32 — même pattern que engine/markovEngine.ts) ───
-
-function mulberry32(seed: number): () => number {
-  let s = seed >>> 0
-  return () => {
-    s = (s + 0x6D2B79F5) >>> 0
-    let t = Math.imul(s ^ (s >>> 15), 1 | s)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-function sampleNormal(mean: number, std: number, rng: () => number): number {
-  if (std === 0) return mean
-  const u1 = Math.max(rng(), 1e-10)
-  const u2 = rng()
-  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2)
-  return mean + std * z
-}
+import { mulberry32, sampleNormal } from '../../engine/markovEngine'
 
 // ─── Interpolation d'une trajectoire de prix à partir de points d'ancrage ──────
 
@@ -93,8 +74,6 @@ function buildCandles(cfg: BuildConfig): Candle[] {
 // ─── Niveaux clés (exposés pour les leçons — support, résistance, fakeout) ──────
 
 export const MAIN_SUPPORT_RESISTANCE_LEVEL = 74
-export const MAIN_FAKEOUT_LEVEL = 60
-export const MAIN_SQUEEZE_RANGE = { start: 128, end: 147 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const MAIN_START_TIME = Date.UTC(2024, 0, 2)
@@ -236,8 +215,6 @@ const EXERCISE_VOL_SEGMENTS: VolSegment[] = [
 // (creux du pullback en contexte — low ≈ 70.5) — utilisé dans analyzeOrder()
 export const EXERCISE_SUPPORT_INDEX = 28
 export const EXERCISE_CONTEXT_LENGTH = 30
-// Zone du squeeze (pour référence externe)
-export const EXERCISE_SQUEEZE_RANGE = { start: 28, end: 41 }
 
 const EXERCISE_OVERRIDES: Record<number, Partial<Candle>> = {
   // Sommet du rallye contexte — mèche haute visible

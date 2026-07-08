@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EDUCATION_MODULES, type EducationModule, type LessonFormat } from '../data/modules'
 import { useEducationStore } from '../store/useEducationStore'
+import HelpButton from '../../help/components/HelpButton'
 import LessonT1PFU from './lessons/LessonT1PFU'
 import LessonT2TaxLoss from './lessons/LessonT2TaxLoss'
 import LessonT3Succession from './lessons/LessonT3Succession'
@@ -749,6 +750,7 @@ export default function EducationPage({ onGoToFinance }: { onGoToFinance?: () =>
               Réinitialiser
             </button>
           )}
+          <HelpButton page="education" />
         </div>
       </div>
 

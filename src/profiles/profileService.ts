@@ -30,7 +30,13 @@ export function saveProfile(profile: Profile): void {
 export function deleteProfile(id: string): void {
   const updated = getProfiles().filter((p) => p.id !== id)
   localStorage.setItem(PROFILES_KEY, JSON.stringify(updated))
+  // Purge de toutes les clés localStorage par profil (voir CLAUDE.md — clés par profil)
   localStorage.removeItem(`patrimoine-data-${id}`)
+  localStorage.removeItem(`patrimoine-education-${id}`)
+  localStorage.removeItem(`patrimoine-tour-${id}`)
+  localStorage.removeItem(`patrimoine-custom-banks-${id}`)
+  localStorage.removeItem(`patrimoine-budget-${id}`)
+  localStorage.removeItem(`patrimoine-actuel-${id}`)
 }
 
 export function getActiveProfileId(): string | null {

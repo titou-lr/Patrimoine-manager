@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [tailwindcss(), react()],
   base: './',
+  optimizeDeps: {
+    include: ['xlsx'],
+  },
   server: {
     proxy: {
       '/yahoo-finance': {

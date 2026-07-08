@@ -36,10 +36,18 @@ export const FINANCE_STEPS: TourStep[] = [
   {
     id: 'F5',
     page: 'finance',
-    targetId: 'finance-tab-backtest',
-    title: 'Backtest de stratégies',
+    targetId: 'finance-tab-journal',
+    title: 'Journal & backtest',
     content: () =>
-      `Testez 7 stratégies sur des données historiques : DCA, Croisement SMA, RSI, Bandes de Bollinger, MACD, Grid trading et ordres manuels. Métriques : return total, max drawdown, win rate, profit factor, Sharpe annualisé et comparaison Buy & Hold.`,
+      `Le Journal analyse vos trades fermés : win rate, profit factor, expectancy, max drawdown, Sharpe. Et depuis l'onglet Trading, testez 7 stratégies sur données historiques (DCA, SMA, RSI, Bollinger, MACD, Grid, manuel) avec comparaison Buy & Hold.`,
+  },
+  {
+    id: 'F5b',
+    page: 'finance',
+    targetId: 'finance-tab-replay',
+    title: 'Onglet Replay',
+    content: () =>
+      `Le Bar Replay rejoue l'historique d'un actif bougie par bougie depuis une date de votre choix. Passez des ordres sans connaître la suite, en pas-à-pas ou en lecture automatique — le meilleur entraînement avant de risquer du capital. La session est éphémère, rien n'est mélangé à vos comptes paper.`,
   },
   {
     id: 'F6',

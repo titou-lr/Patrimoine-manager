@@ -12,10 +12,16 @@ import InflationChart from '../results/InflationChart'
 import SmartAlerts from '../alerts/SmartAlerts'
 import NetWorthPanel from '../networth/NetWorthPanel'
 import HistoryPanel from '../tracking/HistoryPanel'
+import TaxOptimizer from '../tools/TaxOptimizer'
 import FeesImpactChart from '../results/FeesImpactChart'
+import HealthScoreCard from '../results/HealthScoreCard'
+import BenchmarkPanel from '../results/BenchmarkPanel'
+import StressTestPanel from '../results/StressTestPanel'
+import DividendCalendarPanel from '../results/DividendCalendarPanel'
 import { PieChart, Pie, Cell } from 'recharts'
+import HelpButton from '../../help/components/HelpButton'
 
-type ChartTab = 'projection' | 'inflation' | 'retraite' | 'immobilier' | 'capital' | 'securite' | 'bilan_net' | 'fees'
+type ChartTab = 'projection' | 'inflation' | 'retraite' | 'immobilier' | 'capital' | 'securite' | 'bilan_net' | 'fees' | 'analyse'
 
 const CHART_TABS: { id: ChartTab; label: string }[] = [
   { id: 'projection',  label: 'Projection' },
@@ -26,6 +32,7 @@ const CHART_TABS: { id: ChartTab; label: string }[] = [
   { id: 'securite',    label: 'Sécurité' },
   { id: 'bilan_net',   label: 'Bilan net' },
   { id: 'fees',        label: 'Impact frais' },
+  { id: 'analyse',     label: 'Analyse' },
 ]
 
 interface Props {
@@ -37,6 +44,7 @@ interface Props {
   monteCarloResults?: MonteCarloResult[]
   onOpenCompare: () => void
   onGoToEnvelopes: () => void
+  onGoToBudget?: () => void
   onExportCSV?: () => void
 }
 
@@ -186,13 +194,16 @@ export default function DashboardPage({
   monteCarloResults,
   onOpenCompare,
   onGoToEnvelopes,
+  onGoToBudget,
   onExportCSV,
 }: Props) {
   const { history } = useStore(selectActiveSim)
+  const updateEnvelope = useStore((s) => s.updateEnvelope)
   const historyCount = (history ?? []).length
 
   const [chartTab, setChartTab] = useState<ChartTab>('projection')
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [optimizerOpen, setOptimizerOpen] = useState(false)
 
   // ── Empty state ────────────────────────────────────────────────────────────
   if (results.length === 0) {
@@ -264,6 +275,9 @@ export default function DashboardPage({
             </div>
           </div>
           <div className="row gap8">
+            <button className="btn btn-secondary btn-sm" onClick={() => setOptimizerOpen(true)}>
+              Optimiser fiscalité
+            </button>
             {onExportCSV && (
               <button className="btn btn-secondary btn-sm" onClick={onExportCSV}>
                 <IconExport /> Exporter
@@ -272,6 +286,7 @@ export default function DashboardPage({
             <button className="btn btn-primary btn-sm" onClick={onGoToEnvelopes}>
               <IconPlay /> Relancer
             </button>
+            <HelpButton page="simulation" />
           </div>
         </div>
 
@@ -290,9 +305,12 @@ export default function DashboardPage({
           <KPI label="Patrimoine actuel" value={formatEur(initialTotal)} />
         </div>
 
+        {/* ── Score de santé financière ──────────────────────────────────── */}
+        <HealthScoreCard results={results} />
+
         {/* ── SmartAlerts ────────────────────────────────────────────────── */}
         <div data-tour-id="smart-alerts-panel">
-          <SmartAlerts results={results} onNavigate={onGoToEnvelopes} />
+          <SmartAlerts results={results} onNavigate={onGoToEnvelopes} onGoToBudget={onGoToBudget} />
         </div>
 
         {/* ── Hero chart panel with tabs ──────────────────────────────────── */}
@@ -308,6 +326,7 @@ export default function DashboardPage({
                 : chartTab === 'capital' ? 'Objectif capital'
                 : chartTab === 'securite' ? 'Sécurité financière'
                 : chartTab === 'fees' ? 'Impact des frais'
+                : chartTab === 'analyse' ? 'Benchmark, stress test & revenus passifs'
                 : 'Bilan net de patrimoine'}
             </div>
             <div className="seg" data-tour-id="chart-tabs-seg">
@@ -347,6 +366,17 @@ export default function DashboardPage({
           {chartTab === 'fees' && (
             <FeesImpactChart results={results} envelopes={envelopes} globalParams={globalParams} events={events} />
           )}
+          {chartTab === 'analyse' && (
+            <div className="col" style={{ gap: 32 }}>
+              <BenchmarkPanel results={results} />
+              <div style={{ borderTop: '1px solid var(--hairline)', paddingTop: 24 }}>
+                <StressTestPanel results={results} envelopes={envelopes} />
+              </div>
+              <div style={{ borderTop: '1px solid var(--hairline)', paddingTop: 24 }}>
+                <DividendCalendarPanel results={results} envelopes={envelopes} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Répartition grid (2 columns) ───────────────────────────────── */}
@@ -383,6 +413,12 @@ export default function DashboardPage({
       {/* ── Drawers / overlays ─────────────────────────────────────────────── */}
       {historyOpen && (
         <HistoryPanel results={results} envelopes={envelopes} onClose={() => setHistoryOpen(false)} />
+      )}
+      {optimizerOpen && (
+        <TaxOptimizer
+          onClose={() => setOptimizerOpen(false)}
+          onApply={(envelopeId, monthlyContribution) => updateEnvelope(envelopeId, { monthlyContribution })}
+        />
       )}
     </div>
   )

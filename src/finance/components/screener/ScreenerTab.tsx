@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react'
 import { FinanceSelect } from '../ui/FinanceSelect'
 import { FINANCE_ASSETS } from '../../data/financeAssets'
-import { fetchQuotes } from '../../services/priceService'
+import { fetchQuotes, loadHistCache } from '../../services/priceService'
 import { rsi as computeRsi, atr as computeAtr, lastValue } from '../../services/indicatorsService'
 import { getStrategy } from '../../engine/strategies/index'
 import { useFinanceStore } from '../../store/useFinanceStore'
-import type { AssetClass, HistoricalCache, HistoricalPeriod, ScreenerFilter, ScreenerResult } from '../../types/finance'
+import type { AssetClass, HistoricalPeriod, ScreenerFilter, ScreenerResult } from '../../types/finance'
 
 const CLASS_LABELS: Record<AssetClass, string> = {
   equity: 'Actions',
@@ -23,10 +23,6 @@ const CLASS_COLORS: Record<AssetClass, string> = {
   forex: '#06b6d4',
   commodity: '#8b5cf6',
   bond: '#64748b',
-}
-
-function loadHistCache(): HistoricalCache {
-  try { return JSON.parse(localStorage.getItem('finance-hist-cache') || '{}') } catch { return {} }
 }
 
 function exportScreenerCSV(results: ScreenerResult[]) {

@@ -6,11 +6,17 @@ import { FINANCE_STEPS } from '../steps/financeSteps'
 import { EDUCATION_STEPS } from '../steps/educationSteps'
 import { BROKERS_STEPS } from '../steps/brokersSteps'
 import { MODELS_STEPS } from '../steps/modelsSteps'
+import { BUDGET_STEPS } from '../steps/budgetSteps'
+import { PATRIMOINE_STEPS } from '../steps/patrimoineSteps'
+import { SUCCESSION_STEPS } from '../steps/successionSteps'
 import type { TourStep } from '../steps/simulationSteps'
 
-type AppPage = 'dashboard' | 'envelopes' | 'optimizer' | 'data' | 'finance' | 'education' | 'brokers' | 'models'
+type AppPage =
+  | 'patrimoine' | 'succession'
+  | 'simulation_dashboard' | 'envelopes' | 'optimizer'
+  | 'finance' | 'education' | 'brokers' | 'models' | 'budget'
 
-const DEFERRED_PAGES: AppPage[] = ['finance', 'education', 'brokers', 'models']
+const DEFERRED_PAGES: AppPage[] = ['finance', 'education', 'brokers', 'models', 'budget', 'patrimoine', 'succession']
 
 function getPageSteps(page: string): TourStep[] {
   switch (page) {
@@ -18,6 +24,9 @@ function getPageSteps(page: string): TourStep[] {
     case 'education': return EDUCATION_STEPS
     case 'brokers': return BROKERS_STEPS
     case 'models': return MODELS_STEPS
+    case 'budget': return BUDGET_STEPS
+    case 'patrimoine': return PATRIMOINE_STEPS
+    case 'succession': return SUCCESSION_STEPS
     default: return []
   }
 }

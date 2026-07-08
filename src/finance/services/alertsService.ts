@@ -25,15 +25,6 @@ export function checkAlerts(
   return triggered
 }
 
-export function conditionLabel(condition: PriceAlert['condition']): string {
-  switch (condition) {
-    case 'above': return 'au-dessus de'
-    case 'below': return 'en-dessous de'
-    case 'change_pct_up': return '+% ≥'
-    case 'change_pct_down': return '-% ≥'
-  }
-}
-
 export function conditionDisplay(condition: PriceAlert['condition'], threshold: number): string {
   switch (condition) {
     case 'above': return `Prix ≥ ${threshold}`

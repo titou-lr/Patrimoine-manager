@@ -51,6 +51,7 @@ interface FinanceStore {
   trades: Record<string, Trade[]>
   addTrade: (accountId: string, trade: Trade) => void
   setTrades: (accountId: string, trades: Trade[]) => void
+  updateTrade: (accountId: string, tradeId: string, patch: Partial<Trade>) => void
 
   // ---- Stratégie active par compte ----
   activeStrategyId: Record<string, string>
@@ -168,6 +169,15 @@ export const useFinanceStore = create<FinanceStore>()(
         })),
       setTrades: (accountId, trades) =>
         set((s) => ({ trades: { ...s.trades, [accountId]: trades } })),
+      updateTrade: (accountId, tradeId, patch) =>
+        set((s) => ({
+          trades: {
+            ...s.trades,
+            [accountId]: (s.trades[accountId] ?? []).map((t) =>
+              t.id === tradeId ? { ...t, ...patch } : t
+            ),
+          },
+        })),
 
       activeStrategyId: {},
       setActiveStrategy: (accountId, strategyId) =>

@@ -8,8 +8,8 @@ import type {
   TaxProfile, OptimizedAllocation, LocationSuggestion, BlackLittermanView,
 } from '../types'
 import {
-  ASSET_CLASS_PARAMS, ASSET_CLASS_CORRELATIONS, MARKET_CAP_WEIGHTS,
-  BL_DELTA, BL_TAU, mapAssetClass,
+  ASSET_CLASS_PARAMS, ASSET_CLASS_CORRELATIONS,
+  BL_TAU, mapAssetClass,
 } from '../data/regimeData'
 import { PS_RATE } from './taxation'
 
@@ -17,15 +17,6 @@ import { PS_RATE } from './taxation'
 
 export function effectivePEARate(yearsHeld: number, closureHorizon: number): number {
   return (yearsHeld + closureHorizon) >= 5 ? PS_RATE : 0.30
-}
-
-export function effectivePERReturn(
-  grossReturn: number,
-  _monthlyContribution: number,
-  tmi: number,
-  exitTMI: number
-): number {
-  return grossReturn + (tmi / 100) - (exitTMI / 100)
 }
 
 export function effectiveAVRate(totalGain: number, yearsHeld: number, isCouple: boolean): number {
@@ -139,12 +130,6 @@ export function buildCovarianceMatrix(assets: Asset[], currentRegime: EconomicRe
 }
 
 // ─── Black-Litterman ──────────────────────────────────────────────────────────
-
-export function computeImpliedReturns(covMatrix: number[][], marketWeights: number[]): number[] {
-  return covMatrix.map(row =>
-    BL_DELTA * row.reduce((sum, cij, j) => sum + cij * (marketWeights[j] ?? 0), 0)
-  )
-}
 
 /**
  * Calcule les rendements ajustés par les vues utilisateur (Black-Litterman).
@@ -446,13 +431,4 @@ export function assetLocationOptimizer(
   }
 
   return suggestions.sort((a, b) => b.taxSavingEstimate - a.taxSavingEstimate)
-}
-
-// ─── Helper : poids marché pour un portefeuille ───────────────────────────────
-
-export function buildMarketWeightsForAssets(assets: Asset[]): number[] {
-  return assets.map(a => {
-    const ac = mapAssetClass(a.name)
-    return MARKET_CAP_WEIGHTS[ac]
-  })
 }

@@ -125,14 +125,13 @@ Quand le salaire ou le taux d'investissement change, `updateGlobalParams` recalc
 - `ENVELOPE_PRESETS` : 10 presets avec `label`, `maxContribution`, `taxRule`, `defaultReturn`, `regulated`
 - `PRESET_GROUPS` : groupes UI (livrets réglementés / enveloppes de marché)
 - `createEnvelopeFromPreset(presetKey)` : factory qui construit une `Envelope` complète
-- `TAX_RULE_LABEL` : labels courts pour l'UI (table fiscalité dans `ModelsPage`)
+- `TAX_RULE_LABEL` : labels courts pour l'UI (badges fiscalité dans `EnvelopeTypeSelector`)
 - `formatPlafond(maxCont)` : affichage du plafond (Intl.NumberFormat + « Illimité »)
 
 ## Points d'attention pour futures modifications
 
 - **Recharts + TypeScript** : les tooltips custom reçoivent `active`, `payload`, `label` injectés automatiquement. Typer avec des interfaces locales (ex. `interface TooltipPayload { dataKey: string; value: number }`) plutôt qu'avec `any`.
 - **Recharts height** : ne jamais mettre `height="100%"` sur `ResponsiveContainer` — bug connu. Toujours une valeur numérique (ex. `height={260}`).
-- **Epsilon allocation** : `ALLOCATION_EPSILON = 0.01` est défini localement dans `EnvelopeCard` et `AllocationRow`. Si la tolérance change, les modifier ensemble.
 - **Export PDF** : `exportToPDF()` appelle `window.print()` — c'est l'impression navigateur, pas un vrai PDF. L'icône et le label reflètent "Imprimer / PDF".
 - **RunState et changement de simulation** : quand `activeSim.id` change (switch simulation), un `useEffect` dans `App.tsx` recalcule automatiquement le `RunState` et remet `isDirty` à `false`.
 - **LEP / PEL / PEA-PME** : ces presets existent dans `envelopePresets.ts` mais leur `type` est mappé vers un `EnvelopeType` existant. La fiscalité est donc celle du type mappé, pas un comportement dédié.

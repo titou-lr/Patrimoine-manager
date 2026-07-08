@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useStore, selectActiveSim } from '../../store/useStore'
 import { generateAlerts, type Alert } from '../../engine/alertsEngine'
+import { useBudgetStore } from '../../budget/store/useBudgetStore'
+import { computeMonthlySnapshot, compareToSimulationAssumption } from '../../budget/engine/budgetEngine'
+import { generateBudgetAlerts } from '../../budget/engine/budgetAlertsEngine'
 import type { SimulationResult } from '../../types'
+
+// Wider actionTarget union to accommodate budget navigation without modifying alertsEngine.ts
+type AnyAlert = Omit<Alert, 'actionTarget'> & { actionTarget?: 'envelopes' | 'dashboard' | 'budget' }
 
 interface Props {
   results: SimulationResult[]
   onNavigate: (page: 'envelopes' | 'dashboard') => void
+  onGoToBudget?: () => void
 }
 
 const MAX_VISIBLE = 3
@@ -57,15 +64,24 @@ const TYPE_CFG: Record<Alert['type'], {
 }
 
 interface AlertCardProps {
-  alert: Alert
+  alert: AnyAlert
   index: number
   onNavigate: (page: 'envelopes' | 'dashboard') => void
+  onGoToBudget?: () => void
 }
 
-function AlertCard({ alert, index, onNavigate }: AlertCardProps) {
+function AlertCard({ alert, index, onNavigate, onGoToBudget }: AlertCardProps) {
   const cfg = TYPE_CFG[alert.type]
   const animClass =
     index === 0 ? 'animate-in' : index === 1 ? 'animate-in-delay-1' : 'animate-in-delay-2'
+
+  function handleAction() {
+    if (alert.actionTarget === 'budget') {
+      onGoToBudget?.()
+    } else if (alert.actionTarget) {
+      onNavigate(alert.actionTarget as 'envelopes' | 'dashboard')
+    }
+  }
 
   return (
     <div
@@ -77,7 +93,7 @@ function AlertCard({ alert, index, onNavigate }: AlertCardProps) {
         <div className="text-xs text-muted mt-0.5 leading-relaxed">{alert.message}</div>
         {alert.actionLabel && alert.actionTarget && (
           <button
-            onClick={() => onNavigate(alert.actionTarget as 'envelopes' | 'dashboard')}
+            onClick={handleAction}
             className="text-xs text-orange mt-1.5 hover:underline underline-offset-2"
           >
             {alert.actionLabel} →
@@ -88,14 +104,40 @@ function AlertCard({ alert, index, onNavigate }: AlertCardProps) {
   )
 }
 
-export default function SmartAlerts({ results, onNavigate }: Props) {
-  const { envelopes, globalParams } = useStore(selectActiveSim)
+export default function SmartAlerts({ results, onNavigate, onGoToBudget }: Props) {
+  const { envelopes, globalParams, liabilities } = useStore(selectActiveSim)
   const [expanded, setExpanded] = useState(false)
+
+  const {
+    transactions: budgetTxs,
+    envelopes: budgetEnvs,
+    categories: budgetCats,
+    recurringRules: budgetRules,
+    selectedMonth,
+  } = useBudgetStore()
 
   if (results.length === 0) return null
 
-  const { liabilities } = useStore(selectActiveSim)
-  const alerts = generateAlerts(envelopes, results, globalParams, liabilities ?? [])
+  const simAlerts: AnyAlert[] = generateAlerts(envelopes, results, globalParams, liabilities ?? [])
+
+  let budgetAlerts: AnyAlert[] = []
+  if (budgetEnvs.length > 0 || budgetTxs.length > 0) {
+    const snapshot = computeMonthlySnapshot(budgetTxs, budgetEnvs, selectedMonth)
+    const gapResult = compareToSimulationAssumption(snapshot, globalParams)
+    budgetAlerts = generateBudgetAlerts(
+      snapshot,
+      budgetEnvs,
+      budgetCats,
+      budgetTxs,
+      gapResult,
+      budgetRules
+    ) as AnyAlert[]
+  }
+
+  const alerts: AnyAlert[] = [...simAlerts, ...budgetAlerts].sort(
+    (a, b) => a.priority - b.priority
+  )
+
   if (alerts.length === 0) return null
 
   const visible = expanded ? alerts : alerts.slice(0, MAX_VISIBLE)
@@ -109,7 +151,13 @@ export default function SmartAlerts({ results, onNavigate }: Props) {
         </span>
       </div>
       {visible.map((alert, i) => (
-        <AlertCard key={alert.id} alert={alert} index={i} onNavigate={onNavigate} />
+        <AlertCard
+          key={alert.id}
+          alert={alert}
+          index={i}
+          onNavigate={onNavigate}
+          onGoToBudget={onGoToBudget}
+        />
       ))}
       {hiddenCount > 0 && (
         <button

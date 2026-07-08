@@ -4,14 +4,19 @@ import type { FinanceTab } from '../types/finance'
 import MarketTab from './market/MarketTab'
 import AnalysisTab from './analysis/AnalysisTab'
 import TradingTab from './trading/TradingTab'
+import JournalTab from './journal/JournalTab'
+import ReplayTab from './replay/ReplayTab'
 import ScreenerTab from './screener/ScreenerTab'
 import AIChatTab from './ai/AIChatTab'
 import PriceAlertsTab from './alerts/PriceAlertsTab'
+import HelpButton from '../../help/components/HelpButton'
 
 const TABS: Array<{ id: FinanceTab; label: string }> = [
   { id: 'market', label: 'Marché' },
   { id: 'analysis', label: 'Analyse' },
   { id: 'trading', label: 'Trading' },
+  { id: 'journal', label: 'Journal' },
+  { id: 'replay', label: 'Replay' },
   { id: 'screener', label: 'Screener' },
   { id: 'ai', label: 'IA' },
   { id: 'alerts', label: 'Alertes' },
@@ -31,9 +36,12 @@ export default function FinancePage() {
   return (
     <div className="scroll fade-in" style={{ flex: 1, padding: '26px 32px 60px', position: 'relative' }}>
       {/* Page header */}
-      <div style={{ marginBottom: 20 }} data-tour-id="finance-page-header">
-        <h1 className="title" style={{ fontSize: 22, marginBottom: 4 }}>Finance</h1>
-        <p className="caption">Marchés financiers, analyses et alertes en temps réel</p>
+      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }} data-tour-id="finance-page-header">
+        <div style={{ flex: 1 }}>
+          <h1 className="title" style={{ fontSize: 22, marginBottom: 4 }}>Finance</h1>
+          <p className="caption">Marchés financiers, analyses et alertes en temps réel</p>
+        </div>
+        <HelpButton page="finance" />
       </div>
 
       {/* Sub-tabs — scrollable horizontally */}
@@ -105,6 +113,8 @@ export default function FinancePage() {
       {activeTab === 'market' && <MarketTab onAlertToast={showToast} />}
       {activeTab === 'analysis' && <AnalysisTab />}
       {activeTab === 'trading' && <TradingTab />}
+      {activeTab === 'journal' && <JournalTab />}
+      {activeTab === 'replay' && <ReplayTab />}
       {activeTab === 'screener' && <ScreenerTab />}
       {activeTab === 'ai' && <AIChatTab />}
       {activeTab === 'alerts' && <PriceAlertsTab />}

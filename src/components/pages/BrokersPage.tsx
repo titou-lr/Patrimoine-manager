@@ -1,4 +1,5 @@
 import BanksTab from '../data/BanksTab'
+import HelpButton from '../../help/components/HelpButton'
 
 export default function BrokersPage() {
   return (
@@ -26,6 +27,8 @@ export default function BrokersPage() {
             Comparez les frais par enveloppe et importez-les dans votre simulation
           </p>
         </div>
+        <div style={{ flex: 1 }} />
+        <HelpButton page="brokers" />
       </div>
 
       {/* BanksTab fills the rest */}

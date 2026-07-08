@@ -28,8 +28,15 @@ import FinancePage from './finance/components/FinancePage'
 import EducationPage from './education/components/EducationPage'
 import BrokersPage from './components/pages/BrokersPage'
 import ModelsReferencePage from './components/pages/ModelsReferencePage'
+import BudgetPage from './budget/components/BudgetPage'
+import DashboardPatrimoinePage from './components/pages/DashboardPatrimoinePage'
+import SuccessionPage from './patrimoine/succession/SuccessionPage'
+import HelpHost from './help/components/HelpHost'
 
-type AppPage = 'dashboard' | 'envelopes' | 'optimizer' | 'data' | 'finance' | 'education' | 'brokers' | 'models'
+type AppPage =
+  | 'patrimoine' | 'succession'
+  | 'simulation_dashboard' | 'envelopes' | 'optimizer'
+  | 'finance' | 'education' | 'brokers' | 'models' | 'budget'
 
 interface RunState {
   envelopes: Envelope[]
@@ -91,6 +98,9 @@ const IconDollar   = (p: { size?: number }) => <Svg s={p.size}><path d="M8 1.5v1
 const IconGraduate = (p: { size?: number }) => <Svg s={p.size}><path d="M2 6.5 8 4l6 2.5-6 2.5z" /><path d="M5 8.2V12c0 1 1.34 1.8 3 1.8s3-.8 3-1.8V8.2" /><path d="M14 6.5v3.5" /></Svg>
 const IconBank     = (p: { size?: number }) => <Svg s={p.size}><path d="M2 13h12" /><path d="M3 13V7" /><path d="M6.5 13V7" /><path d="M9.5 13V7" /><path d="M13 13V7" /><path d="M1.5 7h13L8 2z" /></Svg>
 const IconSigma    = (p: { size?: number }) => <Svg s={p.size}><path d="M12 3H4l4.5 5L4 13h8" /></Svg>
+const IconBudget   = (p: { size?: number }) => <Svg s={p.size}><rect x="2" y="3" width="12" height="10" rx="1.5" /><path d="M5 7h6M5 10h4" /><path d="M8 3V1.5" /></Svg>
+const IconPie      = (p: { size?: number }) => <Svg s={p.size}><path d="M8 2a6 6 0 1 0 6 6H8z" /><path d="M10 1.8A6 6 0 0 1 14.2 6H10z" /></Svg>
+const IconGift     = (p: { size?: number }) => <Svg s={p.size}><rect x="2.5" y="6" width="11" height="7.5" rx="1" /><path d="M8 6v7.5M2.5 9h11" /><path d="M8 6C6 6 4.5 5 4.5 3.8 4.5 2.8 5.3 2.2 6.2 2.2 7.4 2.2 8 3.5 8 6zm0 0c2 0 3.5-1 3.5-2.2 0-1-.8-1.6-1.7-1.6C8.6 2.2 8 3.5 8 6z" /></Svg>
 
 // ── Command Palette ──────────────────────────────────────────────────────────
 
@@ -116,13 +126,16 @@ function CommandPalette({
   useEffect(() => { inputRef.current?.focus() }, [])
 
   const cmds: Cmd[] = [
-    { group: 'Navigation', icon: <IconHome size={16} />, label: 'Aller au tableau de bord', kbd: 'G D', run: () => go('dashboard') },
+    { group: 'Navigation', icon: <IconPie size={16} />, label: 'Aller au Patrimoine', kbd: 'G P', run: () => go('patrimoine') },
+    { group: 'Navigation', icon: <IconGift size={16} />, label: 'Aller à la Succession', kbd: 'G S', run: () => go('succession') },
+    { group: 'Navigation', icon: <IconHome size={16} />, label: 'Aller au tableau de bord simulation', kbd: 'G D', run: () => go('simulation_dashboard') },
     { group: 'Navigation', icon: <IconLayers size={16} />, label: 'Aller aux enveloppes', kbd: 'G E', run: () => go('envelopes') },
     { group: 'Navigation', icon: <IconSpark size={16} />, label: 'Aller à l\'optimiseur', kbd: 'G O', run: () => go('optimizer') },
     { group: 'Navigation', icon: <IconDollar size={16} />, label: 'Aller à Finance', kbd: 'G F', run: () => go('finance') },
     { group: 'Navigation', icon: <IconGraduate size={16} />, label: 'Aller à Éducation', kbd: 'G U', run: () => go('education') },
     { group: 'Navigation', icon: <IconBank size={16} />, label: 'Aller aux Courtiers', kbd: 'G B', run: () => go('brokers') },
     { group: 'Navigation', icon: <IconSigma size={16} />, label: 'Aller aux Modèles & Formules', kbd: 'G M', run: () => go('models') },
+    { group: 'Navigation', icon: <IconBudget size={16} />, label: 'Aller au Budget', kbd: 'G G', run: () => go('budget') },
     { group: 'Actions', icon: <IconPlay size={16} />, label: 'Lancer la simulation', kbd: '⌘ ↵', run: runSim },
     { group: 'Actions', icon: <IconPlus size={16} />, label: 'Ajouter une enveloppe', run: () => go('envelopes') },
     { group: 'Actions', icon: <IconSpark size={16} />, label: 'Optimiser le portefeuille', run: () => go('optimizer') },
@@ -279,7 +292,7 @@ function ProfileDropdown({
 
 export default function App() {
   const [showProfileScreen] = useState(() => !getActiveProfileId())
-  const [currentPage, setCurrentPage] = useState<AppPage>('dashboard')
+  const [currentPage, setCurrentPage] = useState<AppPage>('patrimoine')
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
 
@@ -335,13 +348,16 @@ export default function App() {
         if (meta && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
         if (meta && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
       }
-      if (meta && e.key === '1') { e.preventDefault(); navigateTo('dashboard') }
+      if (meta && e.key === '1') { e.preventDefault(); navigateTo('simulation_dashboard') }
       if (meta && e.key === '2') { e.preventDefault(); navigateTo('envelopes') }
       if (meta && e.key === '3') { e.preventDefault(); navigateTo('optimizer') }
       if (meta && e.key === '4') { e.preventDefault(); navigateTo('finance') }
       if (meta && e.key === '5') { e.preventDefault(); navigateTo('education') }
       if (meta && e.key === '6') { e.preventDefault(); navigateTo('brokers') }
       if (meta && e.key === '7') { e.preventDefault(); navigateTo('models') }
+      if (meta && e.key === '8') { e.preventDefault(); navigateTo('budget') }
+      if (meta && e.key === '9') { e.preventDefault(); navigateTo('patrimoine') }
+      if (meta && e.key === '0') { e.preventDefault(); navigateTo('succession') }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -490,6 +506,20 @@ export default function App() {
         {/* Transverse pages — independent of any simulation */}
         <nav className="col" style={{ gap: 1, marginTop: 4 }}>
           <div
+            className={`nav-item${currentPage === 'patrimoine' ? ' on' : ''}`}
+            onClick={() => navigateTo('patrimoine')}
+          >
+            <IconPie size={16} />
+            <span className="grow">Patrimoine</span>
+          </div>
+          <div
+            className={`nav-item${currentPage === 'succession' ? ' on' : ''}`}
+            onClick={() => navigateTo('succession')}
+          >
+            <IconGift size={16} />
+            <span className="grow">Succession</span>
+          </div>
+          <div
             className={`nav-item${currentPage === 'finance' ? ' on' : ''}`}
             onClick={() => navigateTo('finance')}
           >
@@ -518,6 +548,13 @@ export default function App() {
             <IconSigma size={16} />
             <span className="grow">Modèles</span>
           </div>
+          <div
+            className={`nav-item${currentPage === 'budget' ? ' on' : ''}`}
+            onClick={() => navigateTo('budget')}
+          >
+            <IconBudget size={16} />
+            <span className="grow">Budget</span>
+          </div>
         </nav>
 
         {/* Simulations section — divider + list with nested sub-pages for active sim */}
@@ -540,7 +577,7 @@ export default function App() {
                 <div key={sim.id}>
                   <div
                     className={`nav-item${isActive ? ' on' : ''}`}
-                    onClick={() => { if (!isActive) { setActiveSimulation(sim.id); navigateTo('dashboard') } }}
+                    onClick={() => { if (!isActive) { setActiveSimulation(sim.id); navigateTo('simulation_dashboard') } }}
                     title={`${sim.globalParams.duration} ans`}
                   >
                     <span className="dot" style={{
@@ -561,9 +598,9 @@ export default function App() {
                       gap: 1,
                     }}>
                       <div
-                        className={`nav-item${currentPage === 'dashboard' ? ' on' : ''}`}
+                        className={`nav-item${currentPage === 'simulation_dashboard' ? ' on' : ''}`}
                         style={{ margin: 0 }}
-                        onClick={() => navigateTo('dashboard')}
+                        onClick={() => navigateTo('simulation_dashboard')}
                       >
                         <IconHome size={16} />
                         <span className="grow">Tableau de bord</span>
@@ -599,7 +636,24 @@ export default function App() {
       <div className="main-content">
 
         {/* ── Page content ─────────────────────────────────────────────── */}
-        {currentPage === 'dashboard' && (
+        {currentPage === 'patrimoine' && (
+          <DashboardPatrimoinePage
+            results={runState.results}
+            envelopes={runState.envelopes}
+            globalParams={runState.globalParams}
+            onGoToEnvelopes={() => navigateTo('envelopes')}
+            onGoToBudget={() => navigateTo('budget')}
+            onGoToSuccession={() => navigateTo('succession')}
+            onToast={showToast}
+          />
+        )}
+        {currentPage === 'succession' && (
+          <SuccessionPage
+            results={runState.results}
+            onBack={() => navigateTo('patrimoine')}
+          />
+        )}
+        {currentPage === 'simulation_dashboard' && (
           <DashboardPage
             results={runState.results}
             envelopes={runState.envelopes}
@@ -609,6 +663,7 @@ export default function App() {
             simulationsCount={simulations.length}
             onOpenCompare={() => setComparePanelOpen(true)}
             onGoToEnvelopes={() => navigateTo('envelopes')}
+            onGoToBudget={() => navigateTo('budget')}
             onExportCSV={() => exportToCSV(results, runState.envelopes)}
           />
         )}
@@ -629,6 +684,7 @@ export default function App() {
         {currentPage === 'education' && <EducationPage onGoToFinance={() => navigateTo('finance')} />}
         {currentPage === 'brokers' && <BrokersPage />}
         {currentPage === 'models' && <ModelsReferencePage />}
+        {currentPage === 'budget' && <BudgetPage onGoToEnvelopes={() => navigateTo('envelopes')} />}
       </div>
 
       {/* ── Overlays ─────────────────────────────────────────────────────── */}
@@ -656,7 +712,7 @@ export default function App() {
         <SimulationComparePanel onClose={() => setComparePanelOpen(false)} />
       )}
 
-      {/* DataModal as overlay (fees import from EnvelopeCard) */}
+      {/* DataModal as overlay (fees import from EnvelopesPage) */}
       {dataModalOpen && (
         <DataModal
           onClose={() => { setDataModalOpen(false); setFeesImportTarget(null) }}
@@ -686,6 +742,9 @@ export default function App() {
           onClose={() => setShowEnvelopeSelector(false)}
         />
       )}
+
+      {/* ── Aide contextuelle (overlay par page) ─────────────────────────── */}
+      <HelpHost />
 
       {/* ── Tour system ──────────────────────────────────────────────────── */}
       {!tourReady && <WelcomeForm />}

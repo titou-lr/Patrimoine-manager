@@ -1,0 +1,537 @@
+{
+  "Patrimoine Linear/charts.jsx": {
+    "mtime": 1780478901.909904,
+    "ast_hash": "b0ccbccec34192b37c1d07b344d457d7",
+    "semantic_hash": "b0ccbccec34192b37c1d07b344d457d7"
+  },
+  "Patrimoine Linear/data.js": {
+    "mtime": 1780478901.9499283,
+    "ast_hash": "f75e802ed5599c1d0c4e05d27fad2ea9",
+    "semantic_hash": "f75e802ed5599c1d0c4e05d27fad2ea9"
+  },
+  "Patrimoine Linear/icons.jsx": {
+    "mtime": 1780478901.9664588,
+    "ast_hash": "47671d791696b59eebf3d859488804e9",
+    "semantic_hash": "47671d791696b59eebf3d859488804e9"
+  },
+  "Patrimoine Linear/screen_dashboard.jsx": {
+    "mtime": 1780478902.0064857,
+    "ast_hash": "108c37ef4a39c0f7fd4c2af02f9e440b",
+    "semantic_hash": "108c37ef4a39c0f7fd4c2af02f9e440b"
+  },
+  "Patrimoine Linear/screen_data.jsx": {
+    "mtime": 1780478902.024538,
+    "ast_hash": "b67ae3d41f008972d77a37950767b035",
+    "semantic_hash": "b67ae3d41f008972d77a37950767b035"
+  },
+  "Patrimoine Linear/screen_envelopes.jsx": {
+    "mtime": 1780478902.0415082,
+    "ast_hash": "23858846e37f948ce6900c8917c013d4",
+    "semantic_hash": "23858846e37f948ce6900c8917c013d4"
+  },
+  "Patrimoine Linear/screen_optimizer.jsx": {
+    "mtime": 1780478902.0569558,
+    "ast_hash": "051a4ed6ab9c8bc2f78dac1d67122527",
+    "semantic_hash": "051a4ed6ab9c8bc2f78dac1d67122527"
+  },
+  "Patrimoine Linear/screen_profile.jsx": {
+    "mtime": 1780478902.0708075,
+    "ast_hash": "0fbbc1864191a03f288c1b7fbf3e0c5e",
+    "semantic_hash": "0fbbc1864191a03f288c1b7fbf3e0c5e"
+  },
+  "Patrimoine Linear/shell.jsx": {
+    "mtime": 1780478902.08368,
+    "ast_hash": "9804dc074cb1e79029cda4ced80f9c77",
+    "semantic_hash": "9804dc074cb1e79029cda4ced80f9c77"
+  },
+  "dist-electron/win-unpacked/vk_swiftshader_icd.json": {
+    "mtime": 1778971083.868824,
+    "ast_hash": "8642dd3a87e2de6e991fae08458e302b",
+    "semantic_hash": "8642dd3a87e2de6e991fae08458e302b"
+  },
+  "electron/main.js": {
+    "mtime": 1778970517.3123631,
+    "ast_hash": "69d9f5927d382e6e31d5a91982e09835",
+    "semantic_hash": "69d9f5927d382e6e31d5a91982e09835"
+  },
+  "electron/package.json": {
+    "mtime": 1778970604.5031245,
+    "ast_hash": "73dcb1213173170d536f9bdd4ee86794",
+    "semantic_hash": "73dcb1213173170d536f9bdd4ee86794"
+  },
+  "eslint.config.js": {
+    "mtime": 1778934586.2557766,
+    "ast_hash": "0355276bc79439afe3c53e3a2470ca1e",
+    "semantic_hash": "0355276bc79439afe3c53e3a2470ca1e"
+  },
+  "package.json": {
+    "mtime": 1778970563.5199676,
+    "ast_hash": "501fba147f9ada1db31127aa71e50dcf",
+    "semantic_hash": "501fba147f9ada1db31127aa71e50dcf"
+  },
+  "src/App.tsx": {
+    "mtime": 1781356254.929631,
+    "ast_hash": "2af751737477a3314631471cc3b95434",
+    "semantic_hash": "2af751737477a3314631471cc3b95434"
+  },
+  "src/components/alerts/SmartAlerts.tsx": {
+    "mtime": 1780444244.629858,
+    "ast_hash": "c5630f2bb0e5f9cc61ebf655f394fe34",
+    "semantic_hash": "c5630f2bb0e5f9cc61ebf655f394fe34"
+  },
+  "src/components/data/AssetsTab.tsx": {
+    "mtime": 1778969548.499696,
+    "ast_hash": "054b3a8f8d77715ce295efcf69abbb38",
+    "semantic_hash": "054b3a8f8d77715ce295efcf69abbb38"
+  },
+  "src/components/data/BankCard.tsx": {
+    "mtime": 1780398663.702641,
+    "ast_hash": "73615792e972da9eb8f828863058718d",
+    "semantic_hash": "73615792e972da9eb8f828863058718d"
+  },
+  "src/components/data/BankCompareOverlay.tsx": {
+    "mtime": 1778957576.985218,
+    "ast_hash": "5f89dc2a36283435705c25d5ef418161",
+    "semantic_hash": "5f89dc2a36283435705c25d5ef418161"
+  },
+  "src/components/data/BanksTab.tsx": {
+    "mtime": 1778950390.1816683,
+    "ast_hash": "326cf95da4b9d2731a504fadb1666024",
+    "semantic_hash": "326cf95da4b9d2731a504fadb1666024"
+  },
+  "src/components/data/DataModal.tsx": {
+    "mtime": 1780402829.839996,
+    "ast_hash": "93fd7d88c966a6a4b755a655f8a47b27",
+    "semantic_hash": "93fd7d88c966a6a4b755a655f8a47b27"
+  },
+  "src/components/data/ModelsPage.tsx": {
+    "mtime": 1780417939.8202407,
+    "ast_hash": "82373c5a3e0da3cc9dcecaa888f112b9",
+    "semantic_hash": "82373c5a3e0da3cc9dcecaa888f112b9"
+  },
+  "src/components/inputs/AllocationRow.tsx": {
+    "mtime": 1780398405.6611826,
+    "ast_hash": "fc0b16a60521219c4ca2f690cbc2aaf2",
+    "semantic_hash": "fc0b16a60521219c4ca2f690cbc2aaf2"
+  },
+  "src/components/inputs/CapOverflowModal.tsx": {
+    "mtime": 1780586067.0202866,
+    "ast_hash": "ea72badb20a0046e50f81926d92cf09a",
+    "semantic_hash": "ea72badb20a0046e50f81926d92cf09a"
+  },
+  "src/components/inputs/EnvelopeAssetsFees.tsx": {
+    "mtime": 1779369835.1749642,
+    "ast_hash": "55d107e6b5565573a0fcf8314e80ed61",
+    "semantic_hash": "55d107e6b5565573a0fcf8314e80ed61"
+  },
+  "src/components/inputs/EnvelopeCard.tsx": {
+    "mtime": 1780583351.476159,
+    "ast_hash": "0cc9c043a3f0907b30e67b11cf818af2",
+    "semantic_hash": "0cc9c043a3f0907b30e67b11cf818af2"
+  },
+  "src/components/inputs/EnvelopeMetaSection.tsx": {
+    "mtime": 1779369854.015241,
+    "ast_hash": "00df244e2ce1ec490b39a5b5383f8a8b",
+    "semantic_hash": "00df244e2ce1ec490b39a5b5383f8a8b"
+  },
+  "src/components/inputs/EnvelopeProjectionSection.tsx": {
+    "mtime": 1780398435.6307423,
+    "ast_hash": "b38e79dbfab2f15f2c44d76d669d1ecd",
+    "semantic_hash": "b38e79dbfab2f15f2c44d76d669d1ecd"
+  },
+  "src/components/inputs/EnvelopeTaxInfo.tsx": {
+    "mtime": 1779369907.7795942,
+    "ast_hash": "8f9a4f19fded6dfbb4ae0eb2d05b056b",
+    "semantic_hash": "8f9a4f19fded6dfbb4ae0eb2d05b056b"
+  },
+  "src/components/inputs/EnvelopeTypeSelector.tsx": {
+    "mtime": 1779203596.6582334,
+    "ast_hash": "827472993cd59cbaed7a2be8b61ef277",
+    "semantic_hash": "827472993cd59cbaed7a2be8b61ef277"
+  },
+  "src/components/layout/SimulationDropdown.tsx": {
+    "mtime": 1778956781.7584825,
+    "ast_hash": "064f125c520c203c633fbb4c85cd6d3e",
+    "semantic_hash": "064f125c520c203c633fbb4c85cd6d3e"
+  },
+  "src/components/layout/SimulationTabs.tsx": {
+    "mtime": 1778939044.3345509,
+    "ast_hash": "4dea776408f55c95ad3b79173873132c",
+    "semantic_hash": "4dea776408f55c95ad3b79173873132c"
+  },
+  "src/components/networth/LiabilityCard.tsx": {
+    "mtime": 1780402231.209865,
+    "ast_hash": "9019eb2074f3cd52094e077ec774ae55",
+    "semantic_hash": "9019eb2074f3cd52094e077ec774ae55"
+  },
+  "src/components/networth/NetWorthPanel.tsx": {
+    "mtime": 1780418034.5679626,
+    "ast_hash": "238e846be9fc33decba2ba2cd09d2f17",
+    "semantic_hash": "238e846be9fc33decba2ba2cd09d2f17"
+  },
+  "src/components/onboarding/OnboardingModal.tsx": {
+    "mtime": 1780398682.2394533,
+    "ast_hash": "e932a1d3621bdacc6b9c04e6d9df36ad",
+    "semantic_hash": "e932a1d3621bdacc6b9c04e6d9df36ad"
+  },
+  "src/components/optimizer/PortfolioOptimizer.tsx": {
+    "mtime": 1780584781.843675,
+    "ast_hash": "086d3bb63f19c21f0cbc96a4f6a021c9",
+    "semantic_hash": "086d3bb63f19c21f0cbc96a4f6a021c9"
+  },
+  "src/components/pages/DashboardPage.tsx": {
+    "mtime": 1780577396.4269736,
+    "ast_hash": "1dc7a18acd76d177ff3b6c2ad8008ea0",
+    "semantic_hash": "1dc7a18acd76d177ff3b6c2ad8008ea0"
+  },
+  "src/components/pages/EnvelopesPage.tsx": {
+    "mtime": 1781342810.126686,
+    "ast_hash": "2134f84d6a01ba0792ce6b533647c792",
+    "semantic_hash": "2134f84d6a01ba0792ce6b533647c792"
+  },
+  "src/components/profiles/CreateProfileModal.tsx": {
+    "mtime": 1780398552.5068724,
+    "ast_hash": "fd7ca762b5e8d0287beef51a287ad64b",
+    "semantic_hash": "fd7ca762b5e8d0287beef51a287ad64b"
+  },
+  "src/components/profiles/ProfileScreen.tsx": {
+    "mtime": 1778969956.7263572,
+    "ast_hash": "54ffa3bfda7b7a58d3300b990ba953db",
+    "semantic_hash": "54ffa3bfda7b7a58d3300b990ba953db"
+  },
+  "src/components/results/AllocationPieChart.tsx": {
+    "mtime": 1781340216.4731104,
+    "ast_hash": "99cdecebb67d36e9b919bf6f270ec528",
+    "semantic_hash": "99cdecebb67d36e9b919bf6f270ec528"
+  },
+  "src/components/results/CapitalPanel.tsx": {
+    "mtime": 1780398604.1312847,
+    "ast_hash": "4514633c8610ac4b9d56433ff83568f8",
+    "semantic_hash": "4514633c8610ac4b9d56433ff83568f8"
+  },
+  "src/components/results/FeesImpactChart.tsx": {
+    "mtime": 1780577373.0141091,
+    "ast_hash": "7fa637cc7c41b9ab29c17d52557c1332",
+    "semantic_hash": "7fa637cc7c41b9ab29c17d52557c1332"
+  },
+  "src/components/results/InflationChart.tsx": {
+    "mtime": 1780480543.7524593,
+    "ast_hash": "b8866cf4b538c0312d3bcefa5ef0bda5",
+    "semantic_hash": "b8866cf4b538c0312d3bcefa5ef0bda5"
+  },
+  "src/components/results/PatrimoineChart.tsx": {
+    "mtime": 1780577802.2878618,
+    "ast_hash": "3a0d0b11b12765455cb250a4034b0792",
+    "semantic_hash": "3a0d0b11b12765455cb250a4034b0792"
+  },
+  "src/components/results/RealEstatePanel.tsx": {
+    "mtime": 1780398642.4200828,
+    "ast_hash": "5e26cce99dd28eac84eae2092cf01135",
+    "semantic_hash": "5e26cce99dd28eac84eae2092cf01135"
+  },
+  "src/components/results/RetirementDualChart.tsx": {
+    "mtime": 1780398490.9040484,
+    "ast_hash": "5757334b653a0b387098ed8c34b750f5",
+    "semantic_hash": "5757334b653a0b387098ed8c34b750f5"
+  },
+  "src/components/results/RetirementPanel.tsx": {
+    "mtime": 1780417908.157835,
+    "ast_hash": "d13e0e8d08327d1735adbfecce051588",
+    "semantic_hash": "d13e0e8d08327d1735adbfecce051588"
+  },
+  "src/components/results/SecurityPanel.tsx": {
+    "mtime": 1780398624.6696782,
+    "ast_hash": "a70382fd8fa05a2d27e6a4b9182c8412",
+    "semantic_hash": "a70382fd8fa05a2d27e6a4b9182c8412"
+  },
+  "src/components/results/SimulationComparePanel.tsx": {
+    "mtime": 1781342661.5400894,
+    "ast_hash": "24e17f5f76818ad92a1d1592151258d5",
+    "semantic_hash": "24e17f5f76818ad92a1d1592151258d5"
+  },
+  "src/components/tools/LifeEvents.tsx": {
+    "mtime": 1780400545.0121582,
+    "ast_hash": "60c638a9d6cf6867b2ad49c2d04d3d73",
+    "semantic_hash": "60c638a9d6cf6867b2ad49c2d04d3d73"
+  },
+  "src/components/tools/TaxOptimizer.tsx": {
+    "mtime": 1780443959.6790228,
+    "ast_hash": "b2af0cf8ae006f029c604c9233126cfe",
+    "semantic_hash": "b2af0cf8ae006f029c604c9233126cfe"
+  },
+  "src/components/tracking/HistoryPanel.tsx": {
+    "mtime": 1780444508.9960504,
+    "ast_hash": "163c55350efbfafe2e2f7d0f45f11dde",
+    "semantic_hash": "163c55350efbfafe2e2f7d0f45f11dde"
+  },
+  "src/components/ui/FormulaBlock.tsx": {
+    "mtime": 1779203723.102515,
+    "ast_hash": "69de6bf5dba6913fc958c30085f50fa0",
+    "semantic_hash": "69de6bf5dba6913fc958c30085f50fa0"
+  },
+  "src/components/ui/GlossaryModal.tsx": {
+    "mtime": 1780402823.4981685,
+    "ast_hash": "7ed4b786c63f29606ba451b4e0b50161",
+    "semantic_hash": "7ed4b786c63f29606ba451b4e0b50161"
+  },
+  "src/components/ui/GlossaryTooltip.tsx": {
+    "mtime": 1780402679.6580577,
+    "ast_hash": "a7a7c40adc0ee8baccbac981ac0d531c",
+    "semantic_hash": "a7a7c40adc0ee8baccbac981ac0d531c"
+  },
+  "src/components/ui/InteractiveExample.tsx": {
+    "mtime": 1779203732.580672,
+    "ast_hash": "a520a18b520fe803f980f2bebd8cb9cd",
+    "semantic_hash": "a520a18b520fe803f980f2bebd8cb9cd"
+  },
+  "src/components/ui/NumberInput.tsx": {
+    "mtime": 1778957052.1569202,
+    "ast_hash": "6dc9f1a4374a2aa3ea56e212c7cf1a7c",
+    "semantic_hash": "6dc9f1a4374a2aa3ea56e212c7cf1a7c"
+  },
+  "src/data/assets.json": {
+    "mtime": 1778939964.3065143,
+    "ast_hash": "c8244dc82624f5d002ecd4ca07b33d7c",
+    "semantic_hash": "c8244dc82624f5d002ecd4ca07b33d7c"
+  },
+  "src/data/banks.json": {
+    "mtime": 1778940031.006945,
+    "ast_hash": "532829b0b82f6b41cd5983909c940583",
+    "semantic_hash": "532829b0b82f6b41cd5983909c940583"
+  },
+  "src/data/envelopePresets.ts": {
+    "mtime": 1779203574.5982816,
+    "ast_hash": "8f7cf086882a7763c5707d653ebae604",
+    "semantic_hash": "8f7cf086882a7763c5707d653ebae604"
+  },
+  "src/data/glossary.ts": {
+    "mtime": 1780402668.039021,
+    "ast_hash": "626b0764d323a3ac7937b4d8eca5bb2d",
+    "semantic_hash": "626b0764d323a3ac7937b4d8eca5bb2d"
+  },
+  "src/data/metadata.json": {
+    "mtime": 1778940049.1479166,
+    "ast_hash": "7d9132fc8cbbe15115c8e42e1eb9de73",
+    "semantic_hash": "7d9132fc8cbbe15115c8e42e1eb9de73"
+  },
+  "src/data/regimeData.ts": {
+    "mtime": 1780418205.7889829,
+    "ast_hash": "a2fa19785aa10592fcac7e4355957e90",
+    "semantic_hash": "a2fa19785aa10592fcac7e4355957e90"
+  },
+  "src/engine/alertsEngine.ts": {
+    "mtime": 1781356282.2880728,
+    "ast_hash": "7373f33d3e24f299926c8e6480ecaa45",
+    "semantic_hash": "7373f33d3e24f299926c8e6480ecaa45"
+  },
+  "src/engine/inflation.ts": {
+    "mtime": 1779203224.8297336,
+    "ast_hash": "c5fa1da31393c799b341e91d4d2adcbb",
+    "semantic_hash": "c5fa1da31393c799b341e91d4d2adcbb"
+  },
+  "src/engine/lifeEventsEngine.ts": {
+    "mtime": 1780400271.3417919,
+    "ast_hash": "2d0c4111e780f28e53cd9cfc4b670568",
+    "semantic_hash": "2d0c4111e780f28e53cd9cfc4b670568"
+  },
+  "src/engine/markovEngine.ts": {
+    "mtime": 1780418792.9041593,
+    "ast_hash": "f94d9469190e8535778eda1a6a714ce6",
+    "semantic_hash": "f94d9469190e8535778eda1a6a714ce6"
+  },
+  "src/engine/netWorthEngine.ts": {
+    "mtime": 1780401931.6567583,
+    "ast_hash": "e7b58e62a235721c24e3ca29e6aeedf1",
+    "semantic_hash": "e7b58e62a235721c24e3ca29e6aeedf1"
+  },
+  "src/engine/portfolioOptimizer.ts": {
+    "mtime": 1780504678.2041311,
+    "ast_hash": "b4061a163bfa027750c50a12ba8a689f",
+    "semantic_hash": "b4061a163bfa027750c50a12ba8a689f"
+  },
+  "src/engine/retirement.ts": {
+    "mtime": 1778969168.2091236,
+    "ast_hash": "66ff1c46ca49dc494254aba121c840e2",
+    "semantic_hash": "66ff1c46ca49dc494254aba121c840e2"
+  },
+  "src/engine/simulation.ts": {
+    "mtime": 1780586035.142733,
+    "ast_hash": "e501c70fae758944d10a683827ca6f84",
+    "semantic_hash": "e501c70fae758944d10a683827ca6f84"
+  },
+  "src/engine/taxOptimizer.ts": {
+    "mtime": 1780576901.5132473,
+    "ast_hash": "387c8e9c26990be5659ea6b557a8bfcc",
+    "semantic_hash": "387c8e9c26990be5659ea6b557a8bfcc"
+  },
+  "src/engine/taxation.ts": {
+    "mtime": 1779203210.444188,
+    "ast_hash": "8ecf8ee308b04e14d94560081543a5e6",
+    "semantic_hash": "8ecf8ee308b04e14d94560081543a5e6"
+  },
+  "src/main.tsx": {
+    "mtime": 1778934586.8922546,
+    "ast_hash": "787e5a07efeb2bf6209d5937195f2f68",
+    "semantic_hash": "787e5a07efeb2bf6209d5937195f2f68"
+  },
+  "src/profiles/profileService.ts": {
+    "mtime": 1778969924.158216,
+    "ast_hash": "83e99cd51099377cb092bd5e54e6f3e9",
+    "semantic_hash": "83e99cd51099377cb092bd5e54e6f3e9"
+  },
+  "src/services/marketDataService.ts": {
+    "mtime": 1778969284.2082932,
+    "ast_hash": "bc01a33eb61d65e2eb00ac3a2ff9e698",
+    "semantic_hash": "bc01a33eb61d65e2eb00ac3a2ff9e698"
+  },
+  "src/store/useStore.ts": {
+    "mtime": 1781342629.775672,
+    "ast_hash": "0d7b51c8de0b012f1ec33ad3659473d3",
+    "semantic_hash": "0d7b51c8de0b012f1ec33ad3659473d3"
+  },
+  "src/types/data.ts": {
+    "mtime": 1778939896.4847257,
+    "ast_hash": "4b20d1a7cad24dbd7f0c86ea9a58e078",
+    "semantic_hash": "4b20d1a7cad24dbd7f0c86ea9a58e078"
+  },
+  "src/types/index.ts": {
+    "mtime": 1780585972.541505,
+    "ast_hash": "51e9541e5466f9d278af37841bea0f80",
+    "semantic_hash": "51e9541e5466f9d278af37841bea0f80"
+  },
+  "src/utils/exportCSV.ts": {
+    "mtime": 1778936761.8411925,
+    "ast_hash": "2b3a76d1c73a10ed03910db7c36ef103",
+    "semantic_hash": "2b3a76d1c73a10ed03910db7c36ef103"
+  },
+  "src/utils/format.ts": {
+    "mtime": 1778935967.4480133,
+    "ast_hash": "0e82bcf48a8b473420b08d38d087afa1",
+    "semantic_hash": "0e82bcf48a8b473420b08d38d087afa1"
+  },
+  "tsconfig.app.json": {
+    "mtime": 1778934586.3880868,
+    "ast_hash": "136630b5accce1ca50663df229534a26",
+    "semantic_hash": "136630b5accce1ca50663df229534a26"
+  },
+  "tsconfig.json": {
+    "mtime": 1778934586.4059136,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": "a3d39fa780ebff65444de257f291ce6c"
+  },
+  "tsconfig.node.json": {
+    "mtime": 1778934586.4207776,
+    "ast_hash": "70bdd0a673bcfc0e828080b306e7c680",
+    "semantic_hash": "70bdd0a673bcfc0e828080b306e7c680"
+  },
+  "vite.config.ts": {
+    "mtime": 1781356731.875878,
+    "ast_hash": "36adf6d5eda81e2acb36ee5a35c65ff9",
+    "semantic_hash": "36adf6d5eda81e2acb36ee5a35c65ff9"
+  },
+  "src/finance/components/FinancePage.tsx": {
+    "mtime": 1781356748.0578692,
+    "ast_hash": "d4f641116c3c724c9d006bf7540b77ca",
+    "semantic_hash": "d4f641116c3c724c9d006bf7540b77ca"
+  },
+  "src/finance/components/market/AssetTable.tsx": {
+    "mtime": 1781355958.5583012,
+    "ast_hash": "b4bb09eb695b8671198b2167dcd17b86",
+    "semantic_hash": "b4bb09eb695b8671198b2167dcd17b86"
+  },
+  "src/finance/components/market/MarketTab.tsx": {
+    "mtime": 1781356052.7262444,
+    "ast_hash": "935a23b8f1f4887e73c3ac370e6df5ef",
+    "semantic_hash": "935a23b8f1f4887e73c3ac370e6df5ef"
+  },
+  "src/finance/data/financeAssets.ts": {
+    "mtime": 1781355892.8019586,
+    "ast_hash": "08b3800aed866f2533e24cad8c834f34",
+    "semantic_hash": "08b3800aed866f2533e24cad8c834f34"
+  },
+  "src/finance/services/priceService.ts": {
+    "mtime": 1781356741.7950606,
+    "ast_hash": "600f018d973eda699dc681d34a3e3aad",
+    "semantic_hash": "600f018d973eda699dc681d34a3e3aad"
+  },
+  "src/finance/store/useFinanceStore.ts": {
+    "mtime": 1781355903.4212196,
+    "ast_hash": "d4a6621a86607cf8a78dd0fdecdcd2c4",
+    "semantic_hash": "d4a6621a86607cf8a78dd0fdecdcd2c4"
+  },
+  "src/finance/types/finance.ts": {
+    "mtime": 1781355825.691416,
+    "ast_hash": "8a46571d363719b9e2a1872a00ef9957",
+    "semantic_hash": "8a46571d363719b9e2a1872a00ef9957"
+  },
+  ".github/workflows/release.yml": {
+    "mtime": 1780581007.952349,
+    "ast_hash": "227240db81680038a55b64946aac24fc",
+    "semantic_hash": "227240db81680038a55b64946aac24fc"
+  },
+  "AUDIT.md": {
+    "mtime": 1780576850.7563255,
+    "ast_hash": "b329221d55f95fe1762042d8fa3b054b",
+    "semantic_hash": "b329221d55f95fe1762042d8fa3b054b"
+  },
+  "Patrimoine Linear/index.html": {
+    "mtime": 1780478901.9888923,
+    "ast_hash": "b1c397263df7d3c14dc7b0a0f964cc41",
+    "semantic_hash": "b1c397263df7d3c14dc7b0a0f964cc41"
+  },
+  "README.md": {
+    "mtime": 1778934586.4575677,
+    "ast_hash": "f6e3faf55d738cf2affe1b44195f27cf",
+    "semantic_hash": "f6e3faf55d738cf2affe1b44195f27cf"
+  },
+  "dist-electron/builder-debug.yml": {
+    "mtime": 1778971132.740572,
+    "ast_hash": "a1e692f559fe142058e2e70ba572fe67",
+    "semantic_hash": "a1e692f559fe142058e2e70ba572fe67"
+  },
+  "dist-electron/builder-effective-config.yaml": {
+    "mtime": 1778971073.7097344,
+    "ast_hash": "3f1b64f05a6b97062bbe8141cc583174",
+    "semantic_hash": "3f1b64f05a6b97062bbe8141cc583174"
+  },
+  "dist-electron/win-unpacked/LICENSE.electron.txt": {
+    "mtime": 1778971083.8379729,
+    "ast_hash": "4d42118d35941e0f664dddbd83f633c5",
+    "semantic_hash": "4d42118d35941e0f664dddbd83f633c5"
+  },
+  "index.html": {
+    "mtime": 1780398327.6458468,
+    "ast_hash": "57ec973116bedd32ff4493f8391e3caa",
+    "semantic_hash": "57ec973116bedd32ff4493f8391e3caa"
+  },
+  "assets/icon.svg": {
+    "mtime": 1778970523.2629552,
+    "ast_hash": "8414824df3fa9fea892ed633aee30cd5",
+    "semantic_hash": "8414824df3fa9fea892ed633aee30cd5"
+  },
+  "public/favicon.svg": {
+    "mtime": 1778934586.5841107,
+    "ast_hash": "7e840862161341271697daa99a40d76b",
+    "semantic_hash": "7e840862161341271697daa99a40d76b"
+  },
+  "public/icons.svg": {
+    "mtime": 1778934586.6494982,
+    "ast_hash": "3b4fcfcf393eca4d264dca4a4663bc37",
+    "semantic_hash": "3b4fcfcf393eca4d264dca4a4663bc37"
+  },
+  "src/assets/hero.png": {
+    "mtime": 1778934586.504319,
+    "ast_hash": "aead493361b27e7510691c5d7072dfc1",
+    "semantic_hash": "aead493361b27e7510691c5d7072dfc1"
+  },
+  "src/assets/react.svg": {
+    "mtime": 1778934586.7141032,
+    "ast_hash": "f0402b67b6ce880f65666bb49e841696",
+    "semantic_hash": "f0402b67b6ce880f65666bb49e841696"
+  },
+  "src/assets/vite.svg": {
+    "mtime": 1778934586.7701797,
+    "ast_hash": "9960a24288958394ac50e57ff638b036",
+    "semantic_hash": "9960a24288958394ac50e57ff638b036"
+  }
+}

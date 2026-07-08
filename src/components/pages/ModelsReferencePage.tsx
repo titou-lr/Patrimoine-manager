@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { Fragment, useState, useEffect, useRef } from 'react'
 import KatexFormula from '../ui/KatexFormula'
 import InteractiveExample from '../ui/InteractiveExample'
 import { formatEur } from '../../utils/format'
+import HelpButton from '../../help/components/HelpButton'
 
 // ── Interactive calculators (migrated from ModelsPage) ──────────────────────
 
@@ -356,10 +357,10 @@ function RegimeParamsTable() {
             <th style={{ padding: '4px 12px' }} />
             <th style={{ padding: '4px 12px' }} />
             {[0,1,2,3].map(i => (
-              <>
-                <th key={`m${i}`} style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 400, color: 'var(--ink-tertiary)', borderLeft: '1px solid var(--hairline-soft)', fontSize: 10 }}>μ</th>
-                <th key={`s${i}`} style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 400, color: 'var(--ink-tertiary)', fontSize: 10 }}>σ</th>
-              </>
+              <Fragment key={i}>
+                <th style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 400, color: 'var(--ink-tertiary)', borderLeft: '1px solid var(--hairline-soft)', fontSize: 10 }}>μ</th>
+                <th style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 400, color: 'var(--ink-tertiary)', fontSize: 10 }}>σ</th>
+              </Fragment>
             ))}
           </tr>
         </thead>
@@ -369,10 +370,10 @@ function RegimeParamsTable() {
               <td style={{ padding: '6px 12px', color: 'var(--ink-muted)' }}>{row.ac}</td>
               <td style={{ padding: '6px 12px', textAlign: 'center', color: 'var(--ink-subtle)' }}>{row.hist}</td>
               {[row.exp, row.over, row.rec, row.cris].map((r, j) => (
-                <>
-                  <td key={`m${j}`} style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--ink)', borderLeft: '1px solid var(--hairline-soft)' }}>{r.mu}</td>
-                  <td key={`s${j}`} style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--ink-subtle)' }}>{r.s}</td>
-                </>
+                <Fragment key={j}>
+                  <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--ink)', borderLeft: '1px solid var(--hairline-soft)' }}>{r.mu}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--ink-subtle)' }}>{r.s}</td>
+                </Fragment>
               ))}
             </tr>
           ))}
@@ -444,6 +445,8 @@ export default function ModelsReferencePage() {
             Référence mathématique exhaustive — toutes les formules du code de l'app
           </p>
         </div>
+        <div style={{ flex: 1 }} />
+        <HelpButton page="models" />
       </div>
 
       {/* Body: left nav + scrollable content */}

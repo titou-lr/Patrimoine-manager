@@ -4,6 +4,7 @@ import type { AssetClass } from '../../types/finance'
 import { fetchQuotes, clearPriceCache } from '../../services/priceService'
 import { useFinanceStore, getAssetById } from '../../store/useFinanceStore'
 import { checkAlerts, conditionDisplay } from '../../services/alertsService'
+import { formatPrice } from '../../../utils/format'
 
 const CLASS_LABELS: Record<AssetClass, string> = {
   equity: 'Action',
@@ -21,16 +22,6 @@ const CLASS_COLORS: Record<AssetClass, string> = {
   forex: '#06b6d4',
   commodity: '#8b5cf6',
   bond: '#64748b',
-}
-
-function formatPrice(val: number, currency: string): string {
-  if (!val) return '—'
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: val < 1 ? 4 : val < 100 ? 2 : 0,
-    maximumFractionDigits: val < 1 ? 4 : val < 100 ? 2 : 0,
-  }).format(val)
 }
 
 function formatVolume(vol: number | undefined): string {

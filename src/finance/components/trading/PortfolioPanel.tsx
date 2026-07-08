@@ -173,16 +173,37 @@ export default function PortfolioPanel({ accountId }: Props) {
             <tbody>
               {pendingOrders.map(order => {
                 const asset = getAssetById(order.assetId)
-                const typeLabel = order.type === 'limit' ? 'Limite' : order.type === 'stop_loss' ? 'Stop-Loss' : 'Take-Profit'
+                const typeLabel =
+                  order.type === 'limit' ? 'Limite'
+                  : order.type === 'stop_loss' ? 'Stop'
+                  : order.type === 'stop_limit' ? (order.stopTriggered ? 'Stop-Limit (armé)' : 'Stop-Limit')
+                  : order.type === 'trailing_stop' ? `Trailing ${order.trailingPct ?? '—'}%`
+                  : 'Take-Profit'
+                const priceLabel =
+                  order.type === 'trailing_stop'
+                    ? (order.trailingStopPrice != null ? order.trailingStopPrice.toFixed(2) : '—')
+                    : order.type === 'stop_limit'
+                    ? `${(order.stopPrice ?? 0).toFixed(2)} → ${(order.limitPrice ?? 0).toFixed(2)}`
+                    : order.type === 'stop_loss'
+                    ? (order.stopPrice ?? order.limitPrice)?.toFixed(2) ?? '—'
+                    : order.limitPrice?.toFixed(2) ?? '—'
                 return (
                   <tr key={order.id} style={{ borderBottom: '1px solid var(--hairline)' }}>
-                    <td style={{ padding: '10px 12px' }}><span className="caption">{typeLabel}</span></td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span className="caption">{typeLabel}</span>
+                      {order.ocoGroupId && (
+                        <span style={{
+                          marginLeft: 6, fontSize: 9, padding: '1px 5px', borderRadius: 3,
+                          background: 'var(--primary)', color: 'white', fontWeight: 700,
+                        }}>OCO</span>
+                      )}
+                    </td>
                     <td style={{ padding: '10px 12px', fontWeight: 600 }}>{asset?.ticker ?? order.ticker}</td>
                     <td style={{ padding: '10px 12px', color: order.side === 'buy' ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
                       {order.side === 'buy' ? 'ACHAT' : 'VENTE'}
                     </td>
                     <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)' }}>
-                      {order.limitPrice?.toFixed(2) ?? '—'}
+                      {priceLabel}
                     </td>
                     <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)' }}>{order.quantity}</td>
                     <td style={{ padding: '10px 12px' }}>

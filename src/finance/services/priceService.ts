@@ -24,7 +24,8 @@ function loadQuoteCache(): PriceCache {
 function saveQuoteCache(cache: PriceCache) {
   try { localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify(cache)) } catch {}
 }
-function loadHistCache(): HistoricalCache {
+// Exporté : lecture directe du cache historique (utilisé par le screener pour éviter les re-fetch)
+export function loadHistCache(): HistoricalCache {
   try { return JSON.parse(localStorage.getItem(HIST_CACHE_KEY) || '{}') } catch { return {} }
 }
 function saveHistCache(cache: HistoricalCache) {

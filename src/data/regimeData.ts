@@ -120,6 +120,8 @@ export const ASSET_CLASS_CORRELATIONS: Record<string, number> = {
 }
 
 // ─── Poids de capitalisation du marché mondial ───────────────────────────────
+// Référence documentaire : cités par la page Modèles & Formules (section Black-Litterman).
+// Plus consommés par le code depuis que l'optimiseur utilise expectedReturn comme prior.
 
 export const MARKET_CAP_WEIGHTS: Record<AssetClass, number> = {
   equity:       0.45,
@@ -132,6 +134,7 @@ export const MARKET_CAP_WEIGHTS: Record<AssetClass, number> = {
 
 // ─── Constantes Black-Litterman et Monte-Carlo ───────────────────────────────
 
+// BL_DELTA : référence documentaire (page Modèles) — voir note MARKET_CAP_WEIGHTS ci-dessus
 export const BL_DELTA = 2.5
 export const BL_TAU = 0.05
 export const MONTE_CARLO_N = 1000

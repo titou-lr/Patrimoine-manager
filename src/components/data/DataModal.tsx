@@ -7,7 +7,6 @@ import {
 } from '../../services/marketDataService'
 import AssetsTab from './AssetsTab'
 import BanksTab from './BanksTab'
-import ModelsPage from './ModelsPage'
 import GlossaryModal from '../ui/GlossaryModal'
 import type { MarketAsset } from '../../types/data'
 import type { EnvelopeFees, EnvelopeType } from '../../types'
@@ -20,7 +19,7 @@ interface Props {
   onApplyFees?: (fees: EnvelopeFees) => void
 }
 
-type TabId = 'assets' | 'banks' | 'models' | 'glossary'
+type TabId = 'assets' | 'banks' | 'glossary'
 type LoadState = 'idle' | 'loading' | 'done' | 'error'
 
 export default function DataModal({ onClose, onUseAsset, activeEnvelopes, feesImport, onApplyFees }: Props) {
@@ -87,7 +86,7 @@ export default function DataModal({ onClose, onUseAsset, activeEnvelopes, feesIm
 
         {/* Onglets internes */}
         <div className="flex gap-1 ml-4">
-          {(['assets', 'banks', 'models', 'glossary'] as TabId[]).map((tab) => (
+          {(['assets', 'banks', 'glossary'] as TabId[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -99,7 +98,6 @@ export default function DataModal({ onClose, onUseAsset, activeEnvelopes, feesIm
             >
               {tab === 'assets' ? 'Actifs financiers'
                 : tab === 'banks' ? 'Frais bancaires'
-                : tab === 'models' ? 'Modèles & Formules'
                 : 'Glossaire'}
             </button>
           ))}
@@ -146,11 +144,6 @@ export default function DataModal({ onClose, onUseAsset, activeEnvelopes, feesIm
             feesImport={feesImport}
             onApplyFees={onApplyFees}
           />
-        )}
-        {activeTab === 'models' && (
-          <div className="h-full overflow-y-auto">
-            <ModelsPage />
-          </div>
         )}
         {activeTab === 'glossary' && (
           <div className="h-full overflow-y-auto">

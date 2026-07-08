@@ -133,6 +133,7 @@ export default function BanksTab({ feesImport, onApplyFees }: Props) {
           )}
           <button
             onClick={openAdd}
+            data-tour-id="brokers-add-custom-btn"
             className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border text-muted hover:text-foreground hover:border-purple/40 transition-colors"
           >
             + Ajouter

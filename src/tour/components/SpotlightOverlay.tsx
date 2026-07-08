@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { TourStep } from '../steps/simulationSteps'
 
 interface SpotlightRect {
@@ -10,33 +10,56 @@ interface BubblePos {
 }
 
 const BUBBLE_W = 340
-const BUBBLE_H_EST = 200  // estimated, for initial positioning
+const BUBBLE_H_FALLBACK = 200   // used only before first real measurement
 const OVERLAY_COLOR = 'rgba(1,1,2,0.82)'
 const PAD_DEFAULT = 10
+const EDGE_MARGIN = 16          // min distance bubble ↔ viewport edges
+const BUBBLE_GAP = 12           // distance bubble ↔ spotlight ring
 
-function getBubblePos(rect: SpotlightRect, pad: number): BubblePos {
-  const vw = window.innerWidth
-  const vh = window.innerHeight
+const FIND_RETRIES = 40         // × 120ms ≈ 4.8s — covers page navigation + mount
+const FIND_INTERVAL_MS = 120
+const STABLE_FRAMES = 3         // rect unchanged over N consecutive frames = layout settled
+const STABLE_TIMEOUT_MS = 2000  // hard cap on the stabilization wait (smooth scroll, charts…)
+const TRACK_POLL_MS = 250       // safety poll for layout shifts that fire no scroll/resize event
 
-  const spaceBelow = vh - (rect.y + rect.h + pad)
-  const spaceAbove = rect.y - pad
+function clamp(v: number, min: number, max: number): number {
+  return Math.min(Math.max(v, min), max)
+}
 
-  let top: number
-  let left: number
+function sameRect(a: SpotlightRect, b: SpotlightRect): boolean {
+  return (
+    Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5 &&
+    Math.abs(a.w - b.w) < 0.5 && Math.abs(a.h - b.h) < 0.5
+  )
+}
 
-  if (spaceBelow >= BUBBLE_H_EST + 12) {
-    top = rect.y + rect.h + pad + 8
-  } else if (spaceAbove >= BUBBLE_H_EST + 12) {
-    top = rect.y - BUBBLE_H_EST - pad - 8
-  } else {
-    // float in bottom quarter of screen
-    top = vh - BUBBLE_H_EST - 24
+/**
+ * Places the bubble below the spotlight hole, else above, else beside (right/left),
+ * else floating at the bottom — always fully clamped inside the viewport.
+ * `hole` is in viewport coordinates (the overlay is position: fixed).
+ */
+function getBubblePos(hole: SpotlightRect, bubbleH: number, vw: number, vh: number): BubblePos {
+  const spaceBelow = vh - (hole.y + hole.h)
+  const spaceAbove = hole.y
+  const clampTop = (t: number) => clamp(t, EDGE_MARGIN, Math.max(EDGE_MARGIN, vh - bubbleH - EDGE_MARGIN))
+  const clampLeft = (l: number) => clamp(l, EDGE_MARGIN, Math.max(EDGE_MARGIN, vw - BUBBLE_W - EDGE_MARGIN))
+
+  if (spaceBelow >= bubbleH + BUBBLE_GAP + EDGE_MARGIN) {
+    return { top: clampTop(hole.y + hole.h + BUBBLE_GAP), left: clampLeft(hole.x) }
   }
-
-  // Align bubble with left edge of spotlight, but keep it on-screen
-  left = Math.max(16, Math.min(rect.x, vw - BUBBLE_W - 16))
-
-  return { top, left }
+  if (spaceAbove >= bubbleH + BUBBLE_GAP + EDGE_MARGIN) {
+    return { top: clampTop(hole.y - bubbleH - BUBBLE_GAP), left: clampLeft(hole.x) }
+  }
+  // Beside: right, then left — avoids covering a tall target
+  const spaceRight = vw - (hole.x + hole.w)
+  if (spaceRight >= BUBBLE_W + BUBBLE_GAP + EDGE_MARGIN) {
+    return { top: clampTop(hole.y), left: clampLeft(hole.x + hole.w + BUBBLE_GAP) }
+  }
+  if (hole.x >= BUBBLE_W + BUBBLE_GAP + EDGE_MARGIN) {
+    return { top: clampTop(hole.y), left: clampLeft(hole.x - BUBBLE_W - BUBBLE_GAP) }
+  }
+  // Float in the bottom quarter of the screen
+  return { top: clampTop(vh - bubbleH - 24), left: clampLeft(hole.x) }
 }
 
 interface Props {
@@ -54,77 +77,127 @@ export default function SpotlightOverlay({
 }: Props) {
   const [rect, setRect] = useState<SpotlightRect | null>(null)
   const [found, setFound] = useState(true)
+  const [viewport, setViewport] = useState(() => ({ vw: window.innerWidth, vh: window.innerHeight }))
+  const [bubbleH, setBubbleH] = useState(BUBBLE_H_FALLBACK)
   const bubbleRef = useRef<HTMLDivElement>(null)
 
   const pad = step.padding ?? PAD_DEFAULT
 
-  // Find target element and update rect
-  const findTarget = useCallback(() => {
-    const el = document.querySelector<HTMLElement>(`[data-tour-id="${step.targetId}"]`)
-    if (!el) return null
-    const r = el.getBoundingClientRect()
-    // Check element is actually in view (has dimensions)
-    if (r.width === 0 && r.height === 0) return null
-    return r
-  }, [step.targetId])
-
+  // ── Phase 1 : find the target, scroll it into view, measure AFTER layout settles ──
   useEffect(() => {
-    let tries = 0
+    let cancelled = false
+    let timer = 0
     let raf = 0
+    let tries = 0
+
+    const queryTarget = () =>
+      document.querySelector<HTMLElement>(`[data-tour-id="${step.targetId}"]`)
+
+    // Re-measures every animation frame until the rect stops moving
+    // (smooth scroll settling, fade-in, charts mounting), then commits it.
+    const waitForStableRect = (el: HTMLElement) => {
+      let last: DOMRect | null = null
+      let stableCount = 0
+      const startedAt = performance.now()
+
+      const tick = () => {
+        if (cancelled) return
+        const r = el.getBoundingClientRect()
+        if (
+          last &&
+          Math.abs(r.top - last.top) < 0.5 && Math.abs(r.left - last.left) < 0.5 &&
+          Math.abs(r.width - last.width) < 0.5 && Math.abs(r.height - last.height) < 0.5
+        ) {
+          stableCount++
+        } else {
+          stableCount = 0
+        }
+        last = r
+        if (stableCount >= STABLE_FRAMES || performance.now() - startedAt > STABLE_TIMEOUT_MS) {
+          setRect({ x: r.left, y: r.top, w: r.width, h: r.height })
+          setFound(true)
+          return
+        }
+        raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }
 
     const attempt = () => {
-      const r = findTarget()
-      if (r) {
-        // Scroll into view if needed, then capture final rect
-        const el = document.querySelector<HTMLElement>(`[data-tour-id="${step.targetId}"]`)
-        if (el) {
-          const inView = r.top >= 0 && r.bottom <= window.innerHeight
-          if (!inView) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            setTimeout(() => {
-              const r2 = findTarget()
-              if (r2) {
-                setRect({ x: r2.left, y: r2.top, w: r2.width, h: r2.height })
-                setFound(true)
-              }
-            }, 350)
-          } else {
-            setRect({ x: r.left, y: r.top, w: r.width, h: r.height })
-            setFound(true)
-          }
+      if (cancelled) return
+      const el = queryTarget()
+      const r = el?.getBoundingClientRect()
+      if (el && r && (r.width > 0 || r.height > 0)) {
+        const fullyInView =
+          r.top >= 0 && r.bottom <= window.innerHeight &&
+          r.left >= 0 && r.right <= window.innerWidth
+        if (!fullyInView) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
         }
-      } else if (tries < 25) {
+        // Measure only once the layout has stabilized — never on a moving target
+        waitForStableRect(el)
+      } else if (tries < FIND_RETRIES) {
         tries++
-        raf = window.setTimeout(attempt, 120)
+        timer = window.setTimeout(attempt, FIND_INTERVAL_MS)
       } else {
         setRect(null)
         setFound(false)
       }
     }
 
-    // Reset state when step changes
-    setRect(null)
-    setFound(true)
-
-    raf = window.setTimeout(attempt, 60)
-    return () => window.clearTimeout(raf)
-  }, [step.id, step.targetId, findTarget])
-
-  // Update rect on resize/scroll
-  useEffect(() => {
-    const update = () => {
-      const r = findTarget()
-      if (r) setRect({ x: r.left, y: r.top, w: r.width, h: r.height })
-    }
-    window.addEventListener('resize', update)
-    window.addEventListener('scroll', update, true)
+    // No sync state reset here : TourController remonte ce composant à chaque
+    // step via key={step.id}, donc rect/found repartent de leur état initial.
+    timer = window.setTimeout(attempt, 60)
     return () => {
-      window.removeEventListener('resize', update)
-      window.removeEventListener('scroll', update, true)
+      cancelled = true
+      window.clearTimeout(timer)
+      cancelAnimationFrame(raf)
     }
-  }, [findTarget])
+  }, [step.id, step.targetId])
 
-  // Listen for action on required-action steps
+  // ── Phase 2 : keep the rect in sync (resize, inner scrolling, layout shifts) ──
+  const hasRect = rect !== null
+  useEffect(() => {
+    if (!hasRect) return
+
+    const update = () => {
+      const el = document.querySelector<HTMLElement>(`[data-tour-id="${step.targetId}"]`)
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      if (r.width === 0 && r.height === 0) return
+      const next = { x: r.left, y: r.top, w: r.width, h: r.height }
+      setRect((prev) => (prev && sameRect(prev, next) ? prev : next))
+    }
+
+    const onResize = () => {
+      setViewport({ vw: window.innerWidth, vh: window.innerHeight })
+      update()
+    }
+
+    window.addEventListener('resize', onResize)
+    // capture: true also catches scrolling inside nested scroll containers —
+    // getBoundingClientRect stays in viewport coordinates in every case
+    window.addEventListener('scroll', update, true)
+
+    const el = document.querySelector<HTMLElement>(`[data-tour-id="${step.targetId}"]`)
+    let ro: ResizeObserver | null = null
+    if (el && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(update)
+      ro.observe(el)
+    }
+    // Safety net: content elsewhere on the page can move the target without
+    // firing any scroll/resize event (e.g. an async chart above it)
+    const poll = window.setInterval(update, TRACK_POLL_MS)
+
+    return () => {
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('scroll', update, true)
+      ro?.disconnect()
+      window.clearInterval(poll)
+    }
+  }, [hasRect, step.targetId])
+
+  // ── Listen for action on required-action steps ──
   useEffect(() => {
     if (!step.requiresAction || !onActionDetected) return
     const handler = (e: MouseEvent) => {
@@ -138,8 +211,15 @@ export default function SpotlightOverlay({
     return () => document.removeEventListener('click', handler)
   }, [step.requiresAction, step.targetId, onActionDetected])
 
-  const vw = window.innerWidth
-  const vh = window.innerHeight
+  // ── Measure the real bubble height before paint, so the position is exact ──
+  // useLayoutEffect runs before the browser paints: the corrected position is
+  // applied in the same frame, no visible jump.
+  useLayoutEffect(() => {
+    const h = bubbleRef.current?.offsetHeight
+    if (h && Math.abs(h - bubbleH) > 1) setBubbleH(h)
+  }, [step.id, rect, found, viewport, bubbleH])
+
+  const { vw, vh } = viewport
 
   // 4-quadrant overlay rectangles (avoid the spotlight area)
   const r = rect ?? { x: vw / 2 - 100, y: vh / 2 - 40, w: 200, h: 80 }
@@ -150,7 +230,7 @@ export default function SpotlightOverlay({
 
   const bubblePos = getBubblePos(
     { x: x1, y: y1, w: x2 - x1, h: y2 - y1 },
-    12
+    bubbleH, vw, vh
   )
 
   return (
@@ -173,14 +253,14 @@ export default function SpotlightOverlay({
       {/* Left */}
       <div style={{
         position: 'fixed', zIndex: 600,
-        top: y1, left: 0, width: x1, height: y2 - y1,
+        top: y1, left: 0, width: x1, height: Math.max(0, y2 - y1),
         background: OVERLAY_COLOR,
         pointerEvents: 'all',
       }} />
       {/* Right */}
       <div style={{
         position: 'fixed', zIndex: 600,
-        top: y1, left: x2, right: 0, height: y2 - y1,
+        top: y1, left: x2, right: 0, height: Math.max(0, y2 - y1),
         background: OVERLAY_COLOR,
         pointerEvents: 'all',
       }} />
@@ -189,7 +269,7 @@ export default function SpotlightOverlay({
       <div style={{
         position: 'fixed', zIndex: 601, pointerEvents: 'none',
         left: x1, top: y1,
-        width: x2 - x1, height: y2 - y1,
+        width: Math.max(0, x2 - x1), height: Math.max(0, y2 - y1),
         borderRadius: 10,
         border: '2px solid var(--primary)',
         boxShadow: '0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent), 0 0 24px color-mix(in srgb, var(--primary) 15%, transparent)',
@@ -203,6 +283,8 @@ export default function SpotlightOverlay({
           position: 'fixed', zIndex: 602,
           top: bubblePos.top, left: bubblePos.left,
           width: BUBBLE_W,
+          maxHeight: vh - 2 * EDGE_MARGIN,
+          overflowY: 'auto',
           background: 'var(--surface-2)',
           border: '1px solid var(--hairline-strong)',
           borderRadius: 'var(--r-xl)',

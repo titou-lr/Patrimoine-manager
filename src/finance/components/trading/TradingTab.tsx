@@ -7,6 +7,7 @@ import { checkPendingOrders, updatePositionPrices, computeAccountStats, executeM
 import { formatEur, formatPct } from '../../../utils/format'
 import NumberInput from '../../../components/ui/NumberInput'
 import NewAccountModal from './NewAccountModal'
+import AccountSettingsModal from './AccountSettingsModal'
 import OrderPanel from './OrderPanel'
 import PortfolioPanel from './PortfolioPanel'
 import TradeHistory from './TradeHistory'
@@ -25,13 +26,14 @@ export default function TradingTab() {
   const {
     tradingAccounts, activeTradingAccountId, setActiveTradingAccount,
     positions, trades, orders,
-    setPositions, setTrades, updateTradingAccount, updateOrder, addOrder,
+    setPositions, setTrades, updateTradingAccount, updateOrder, cancelOrder, addOrder,
     activeStrategyId, setActiveStrategy,
     strategyParams, setStrategyParams,
   } = useFinanceStore()
 
   const [subTab, setSubTab] = useState<TradingSubTab>('orders')
   const [showNewAccount, setShowNewAccount] = useState(false)
+  const [showAccountSettings, setShowAccountSettings] = useState(false)
   const [autoMode, setAutoMode] = useState(false)
   const [signalLog, setSignalLog] = useState<SignalLogEntry[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -87,7 +89,7 @@ export default function TradingTab() {
         setPositions(activeTradingAccountId, updated)
       }
 
-      // Check pending orders
+      // Check pending orders (limit/stop/stop-limit/trailing/OCO)
       if (pendingOrders.length > 0 && account) {
         const result = checkPendingOrders(pendingOrders, newPrices, account, accountPositions, accountTrades)
         if (result.triggeredOrders.length > 0) {
@@ -95,8 +97,19 @@ export default function TradingTab() {
           setPositions(activeTradingAccountId, result.updatedPositions)
           setTrades(activeTradingAccountId, result.updatedTrades)
           for (const o of result.triggeredOrders) {
-            updateOrder(activeTradingAccountId, o.id, { status: 'filled', fillPrice: o.fillPrice, filledAt: o.filledAt })
+            updateOrder(activeTradingAccountId, o.id, {
+              status: 'filled', fillPrice: o.fillPrice, filledAt: o.filledAt,
+              commission: o.commission, slippageApplied: o.slippageApplied,
+            })
           }
+        }
+        // Annulations OCO
+        for (const id of result.cancelledOrderIds) {
+          cancelOrder(activeTradingAccountId, id)
+        }
+        // Patches d'état (trailing stop mis à jour, stop-limit armé)
+        for (const [orderId, patch] of Object.entries(result.orderPatches)) {
+          updateOrder(activeTradingAccountId, orderId, patch)
         }
       }
 
@@ -182,6 +195,15 @@ export default function TradingTab() {
         <button className="btn btn-ghost btn-sm" onClick={() => setShowNewAccount(true)}>
           + Nouveau compte
         </button>
+        {account && (
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowAccountSettings(true)}
+            title="Commissions, slippage, suppression"
+          >
+            ⚙
+          </button>
+        )}
 
         {/* KPIs rapides */}
         {stats && account && (
@@ -263,6 +285,9 @@ export default function TradingTab() {
       )}
 
       {showNewAccount && <NewAccountModal onClose={() => setShowNewAccount(false)} />}
+      {showAccountSettings && account && (
+        <AccountSettingsModal account={account} onClose={() => setShowAccountSettings(false)} />
+      )}
     </div>
   )
 }

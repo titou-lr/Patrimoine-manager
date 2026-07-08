@@ -8,16 +8,7 @@ import type { ActiveOverlays } from './IndicatorPanel'
 import { CandleChart } from './CandleChart'
 import { IndicatorPanel } from './IndicatorPanel'
 import { PredictionOverlay } from './PredictionOverlay'
-
-function formatPrice(val: number, currency: string): string {
-  if (!val) return '—'
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: val < 1 ? 4 : val < 100 ? 2 : 0,
-    maximumFractionDigits: val < 1 ? 4 : val < 100 ? 2 : 0,
-  }).format(val)
-}
+import { formatPrice } from '../../../utils/format'
 
 export default function AnalysisTab() {
   const { selectedAssetId, setActiveTab } = useFinanceStore()

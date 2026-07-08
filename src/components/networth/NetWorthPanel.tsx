@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import { useStore, selectActiveSim } from '../../store/useStore'
 import { computeNetWorthSeries, liabilityInterestCost } from '../../engine/netWorthEngine'
+import { exportNetWorthXlsx } from '../../utils/exportNetWorthXlsx'
 import { formatEur } from '../../utils/format'
 import type { Liability, SimulationResult } from '../../types'
 import LiabilityCard from './LiabilityCard'
@@ -76,7 +77,7 @@ const LIABILITY_LABELS: Record<Liability['type'], string> = {
 }
 
 export default function NetWorthPanel({ results, globalParams }: Props) {
-  const { liabilities } = useStore(selectActiveSim)
+  const { liabilities, envelopes } = useStore(selectActiveSim)
   const { addLiability: storAddLiability } = useStore()
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const activeLiabilities = (liabilities ?? []).filter((l) => l.active !== false)
@@ -155,11 +156,23 @@ export default function NetWorthPanel({ results, globalParams }: Props) {
       <div className="bg-surface border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-foreground">Évolution patrimoine net</h3>
-          {equilibreYear && (
-            <span className="text-xs text-muted bg-success/10 border border-success/20 rounded-full px-2 py-0.5">
-              Point d'équilibre : t+{equilibreYear} ans
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {equilibreYear && (
+              <span className="text-xs text-muted bg-success/10 border border-success/20 rounded-full px-2 py-0.5">
+                Point d'équilibre : t+{equilibreYear} ans
+              </span>
+            )}
+            <button
+              onClick={() => exportNetWorthXlsx(results, envelopes, liabilities ?? [])}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface border border-border text-muted hover:text-foreground hover:border-border-mid transition-colors"
+              title="Exporter le bilan net en Excel (actifs, passifs, projection 5 ans)"
+            >
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 2.5v6.5M5.4 6.6 8 9.2l2.6-2.6" /><path d="M3 11v1.5h10V11" />
+              </svg>
+              Exporter Excel
+            </button>
+          </div>
         </div>
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
