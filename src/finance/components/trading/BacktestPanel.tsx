@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { FinanceSelect } from '../ui/FinanceSelect'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { FINANCE_ASSETS } from '../../data/financeAssets'
+import { useAllAssets } from '../../store/useFinanceStore'
 import { STRATEGIES } from '../../engine/strategies/index'
 import { runBacktest } from '../../engine/backtestEngine'
 import { fetchHistorical } from '../../services/priceService'
@@ -35,14 +35,15 @@ export default function BacktestPanel() {
     return { ...defaults, ...paramValues }
   }, [strategy, paramValues])
 
+  const allAssets = useAllAssets()
   const filteredAssets = useMemo(() => {
     const q = assetSearch.toLowerCase()
-    return FINANCE_ASSETS.filter(a =>
+    return allAssets.filter(a =>
       a.name.toLowerCase().includes(q) || a.ticker.toLowerCase().includes(q)
     ).slice(0, 20)
-  }, [assetSearch])
+  }, [assetSearch, allAssets])
 
-  const selectedAsset = FINANCE_ASSETS.find(a => a.id === selectedAssetId)
+  const selectedAsset = allAssets.find(a => a.id === selectedAssetId)
 
   async function handleRun() {
     if (!selectedAsset) { setErrorMsg('Sélectionnez un actif'); return }

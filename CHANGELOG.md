@@ -6,6 +6,75 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.4] — 2026-07-10
+
+### Fixed — Screener : variation 24h à 0,00 %
+
+- Cause : Yahoo ne renvoie `meta.previousClose` que sur les ranges intraday ; sur `range=5d&interval=1d` (utilisé par `fetchQuotes`) il est absent → `changePct = 0` pour tous les actifs
+- Fix dans `priceService.fetchQuotes` : fallback sur l'avant-dernière clôture valide de la série renvoyée (puis `chartPreviousClose`) pour calculer `change` / `changePct` / `previousClose`
+
+### Fixed — Modèles & Formules : texte bleu illisible
+
+- Les symboles de variables des légendes (`FormulaCard`) étaient du LaTeX brut (`r_{\text{nominal}}`) affiché tel quel en `--primary-hover` → désormais rendus via `KatexFormula` avec la classe `.ktex-var` (accent `--gold`, règle ajoutée à la section KaTeX d'`index.css`)
+- Noms de constantes de `ConstantTable` : `--primary-hover` → `--gold`
+
+### Fixed — Flux d'import de courtier & modal plafond (symptôme « PEA erratique »)
+
+- Le bouton « Importer » du panneau d'enveloppe déclenchait **deux actions simultanées** : ouverture de la `DataModal` d'import de frais ET navigation vers la page Courtiers (démontage d'`EnvelopesPage`, perte du panneau et des brouillons non enregistrés). La navigation parasite est supprimée — l'import n'ouvre plus que la modal (prop `onOpenData` d'`EnvelopesPage` retirée)
+- `capModalDismissed` était stocké mais jamais lu : la `CapOverflowModal` se rouvrait à chaque re-run après fermeture. Le flag est désormais consulté dans `handleRunSimulation` et réinitialisé au changement de simulation
+- Audit de l'édition des actifs PEA (suite de l'audit v1.3.3) : aucun chemin de code spécifique au type `pea` ne bloque l'édition — le comportement « impossible de modifier » s'explique par la navigation parasite ci-dessus (panneau démonté en plein import de frais)
+- `NumberInput` : Entrée valide désormais la saisie (blur + commit), Échap annule — le hint « Appuyez sur Entrée pour valider » des popovers est maintenant vrai
+
+### Added — Simulations
+
+- **Renommage inline** : double-clic sur le nom d'une simulation dans la sidebar → édition (Entrée valide, Échap annule) via `renameSimulation` existant du store
+- **Redirection post-simulation** : « Lancer la simulation » redirige vers le tableau de bord simulation une fois les résultats calculés (ou après gestion des plafonds) + tooltip sur le bouton clarifiant qu'il met à jour la projection
+
+### Added — Finance : analyse technique
+
+- **Sélecteur de timeframe des chandeliers** (UT), indépendant de la période : 1min / 5min / 15min / 1h / 4h / 1D / 1W / 1M + Auto (mapping legacy). Yahoo ne servant pas de 4h, il est agrégé côté client depuis le 60m (`aggregateCandles`). Range clampé à la profondeur max de chaque intervalle (`INTERVAL_META`), TTL cache 30 min en intraday, clé de cache `ticker-période-UT`
+- **RSI(14) + Stochastic RSI(14,14,3,3)** en sous-graphiques dédiés sous le chart principal (`OscillatorPanel`, lightweight-charts, zones 30/70 et 20/80) — remplacent les overlays SMA 20/50 et EMA 20 du panneau d'analyse (SMA/EMA restent intacts dans backtest, prédiction, éducation). `stochRsi()` ajouté à `indicatorsService` (pur)
+
+### Added — Finance : prédiction Fibonacci J+30
+
+- `fibonacciPrediction(candles, horizon, lookback)` dans `predictionEngine` : détection du dernier swing haut/bas (highest/lowest sur N bougies, N configurable, défaut 90), retracements 23,6/38,2/50/61,8/78,6 % et extensions 100/127,2/161,8/261,8 %
+- Niveaux tracés en lignes horizontales annotées (`createPriceLine`) sur le graphique + liste des niveaux et direction du swing dans le panneau Prédiction (`PredictionResult.levels` / `.swing`)
+
+### Added — Finance : recherche dynamique de titres
+
+- `searchSymbols(query)` dans `priceService` — endpoint Yahoo `/v1/finance/search` (même host/proxy que les cotations) : couvre Euronext Paris (.PA), Amsterdam (.AS), Milan (.MI), Xetra (.DE), Londres (.L), ETF européens, crypto…
+- Champ de recherche avec autocomplete dans l'onglet Marché : ajout à la watchlist en un clic ou « Analyser → »
+- `useFinanceStore.customAssets` (persisté) + `addCustomAsset` / `useAllAssets()` — les actifs ajoutés sont disponibles partout : screener, alertes prix, backtest, replay, ticket d'ordre (`FINANCE_ASSETS` fusionné via `useAllAssets`)
+
+### Changed — Hiérarchie visuelle
+
+- Échelle `.kpi-value` retravaillée : chiffre héro 34 px/600 en `--ink`, KPIs secondaires 21 px en `--ink-muted` — le chiffre dominant domine réellement (Dashboard simulation & Patrimoine, même primitive)
+- Analyse Finance : prix courant en 27 px/600 (chiffre dominant de la page), variation 24h annotée
+- Enveloppes : total des versements mensuels renforcé (15 px/600) dans la barre de paramètres
+
+---
+
+## [1.3.3] — 2026-07-09
+
+### Removed — Lien Patrimoine / Budget
+
+- Suppression intégrale de la liaison passifs ↔ catégories Budget introduite en v1.3.2 :
+  - Champ `linkedBudgetCategoryId` retiré du type `PatrimoineLiability`
+  - Sélecteur « Catégorie budget associée » retiré du formulaire de passif (`PatrimoineItemFormModal`) + lecture de `useBudgetStore` supprimée
+  - Composant `LiabilityUpdateProposals` et toute la logique de détection post-import (« N remboursements détectés, mettre à jour l'encours ? ») retirés de `CsvImportModal`
+- `CsvImportModal` n'importe plus que des transactions Budget — aucun pont Budget → Patrimoine ne subsiste
+
+### Removed — Accès secondaire Succession depuis Patrimoine
+
+- Suppression du bouton « Succession / Donation » du header de `DashboardPatrimoinePage` (prop `onGoToSuccession` retirée) — la page Succession reste accessible via la sidebar dédiée, la navigation principale est inchangée
+
+### Audit — Enveloppe PEA
+
+- Audit du composant d'édition d'enveloppe, du store (`useStore.updateEnvelope`) et du type `Envelope` suite au symptôme signalé (« nom non modifiable sans courtier sélectionné »)
+- **Aucun bug identifié** : le champ nom est un `input` contrôlé sur un état local (`draft.label`), sans `disabled`/`readOnly` ni dépendance au courtier/frais, et le panneau est remonté par `key={sel.id}`. Aucune modification apportée.
+
+---
+
 ## [1.3.2] — 2026-07-08
 
 ### Fixed — Menus déroulants illisibles (blanc sur blanc)

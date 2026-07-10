@@ -31,7 +31,6 @@ interface Props {
   globalParams: GlobalParams
   onGoToEnvelopes: () => void
   onGoToBudget: () => void
-  onGoToSuccession: () => void
   onToast: (msg: string) => void
 }
 
@@ -176,7 +175,7 @@ function RepartitionDonut({ byCategory, byEnvelopeFiscale }: {
 
 export default function DashboardPatrimoinePage({
   results, envelopes, globalParams,
-  onGoToEnvelopes, onGoToBudget, onGoToSuccession, onToast,
+  onGoToEnvelopes, onGoToBudget, onToast,
 }: Props) {
   const [tab, setTab] = useState<PatrimoineTab>('overview')
   const { assets, liabilities: patLiabilities, snapshots, takeSnapshot } = usePatrimoineStore()
@@ -254,9 +253,6 @@ export default function DashboardPatrimoinePage({
             <div className="caption">Votre patrimoine réel aujourd'hui — distinct des projections de simulation</div>
           </div>
           <div className="row gap8">
-            <button className="btn btn-secondary btn-sm" onClick={onGoToSuccession}>
-              Succession / Donation
-            </button>
             <div className="seg" data-tour-id="patrimoine-tab-seg">
               <button className={tab === 'overview' ? 'on' : ''} onClick={() => setTab('overview')}>Vue d'ensemble</button>
               <button className={tab === 'saisie' ? 'on' : ''} onClick={() => setTab('saisie')}>Saisir mon patrimoine</button>

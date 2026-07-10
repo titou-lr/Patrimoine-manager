@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { useBudgetStore } from '../../store/useBudgetStore'
-import { usePatrimoineStore } from '../../../patrimoine/store/usePatrimoineStore'
 import {
   detectDelimiter,
   parseCsvRaw,
@@ -9,7 +8,6 @@ import {
 } from '../../engine/csvImport'
 import { parseXlsxRaw } from '../../engine/xlsxImport'
 import type { CsvColumnMapping, BudgetTransaction } from '../../types/budget'
-import type { PatrimoineLiability } from '../../../patrimoine/types/patrimoine'
 
 interface Props {
   onClose: () => void
@@ -49,9 +47,6 @@ export default function CsvImportModal({ onClose }: Props) {
   const [mapping, setMapping] = useState<CsvColumnMapping>(DEFAULT_MAPPING)
   const [preview, setPreview] = useState<Omit<BudgetTransaction, 'id'>[]>([])
   const [importResult, setImportResult] = useState<{ imported: number; duplicatesSkipped: number } | null>(null)
-  // Transactions réellement importées (hors doublons), capturées au moment du
-  // confirm — après l'import, existingHashes les marquerait toutes en doublon
-  const [importedTxs, setImportedTxs] = useState<Omit<BudgetTransaction, 'id'>[]>([])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -129,7 +124,6 @@ export default function CsvImportModal({ onClose }: Props) {
   }
 
   function handleConfirm() {
-    setImportedTxs(preview.filter((t) => !isDuplicate(t)))
     const result = importTransactions(preview)
     setImportResult(result)
   }
@@ -479,7 +473,6 @@ export default function CsvImportModal({ onClose }: Props) {
                   </p>
                 )}
               </div>
-              <LiabilityUpdateProposals importedTxs={importedTxs} />
             </div>
           )}
         </div>
@@ -531,107 +524,6 @@ export default function CsvImportModal({ onClose }: Props) {
           )}
         </div>
       </div>
-    </div>
-  )
-}
-
-/** Proposition de mise à jour d'un encours de passif après import */
-interface LiabilityProposal {
-  liability: PatrimoineLiability
-  count: number
-  total: number
-  nouvelEncours: number
-}
-
-/**
- * Pont Budget → Patrimoine post-import (seul pont autorisé) : détecte les
- * remboursements importés dont la catégorie est liée à un passif
- * (linkedBudgetCategoryId) et propose de mettre à jour l'encours.
- * upsertLiability() n'est appelé QUE sur clic « Mettre à jour » —
- * jamais automatiquement.
- */
-function LiabilityUpdateProposals({ importedTxs }: { importedTxs: Omit<BudgetTransaction, 'id'>[] }) {
-  const upsertLiability = usePatrimoineStore((s) => s.upsertLiability)
-
-  // Snapshot des propositions au premier rendu : la mise à jour d'un passif
-  // ne doit pas recalculer (et faire disparaître) les autres propositions
-  const [proposals] = useState<LiabilityProposal[]>(() => {
-    const liabilities = usePatrimoineStore.getState().liabilities
-    return liabilities
-      .filter((l) => l.linkedBudgetCategoryId)
-      .map((l) => {
-        const matching = importedTxs.filter(
-          (t) => t.type === 'expense' && t.categoryId === l.linkedBudgetCategoryId
-        )
-        const total = matching.reduce((s, t) => s + t.amount, 0)
-        return {
-          liability: l,
-          count: matching.length,
-          total,
-          nouvelEncours: Math.max(0, l.currentValue - total),
-        }
-      })
-      .filter((p) => p.count > 0)
-  })
-  const [resolved, setResolved] = useState<Record<string, 'updated' | 'ignored'>>({})
-
-  if (proposals.length === 0) return null
-
-  const fmt = (n: number) =>
-    n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-
-  function applyUpdate(p: LiabilityProposal) {
-    upsertLiability({
-      ...p.liability,
-      currentValue: p.nouvelEncours,
-      lastUpdatedAt: new Date().toISOString(),
-    })
-    setResolved((r) => ({ ...r, [p.liability.id]: 'updated' }))
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 8 }}>
-      {proposals.map((p) => {
-        const status = resolved[p.liability.id]
-        return (
-          <div
-            key={p.liability.id}
-            style={{
-              border: '1px solid var(--hairline-strong)', borderRadius: 8,
-              padding: '12px 14px', background: 'var(--surface-2)',
-              display: 'flex', flexDirection: 'column', gap: 8,
-            }}
-          >
-            <p style={{ fontSize: 13, color: 'var(--ink)', margin: 0 }}>
-              {p.count} remboursement{p.count > 1 ? 's' : ''} de crédit détecté{p.count > 1 ? 's' : ''}{' '}
-              (total {fmt(p.total)} €). Mettre à jour l'encours de{' '}
-              <strong>{p.liability.label}</strong> ?
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--ink-subtle)', margin: 0, fontFamily: 'var(--font-mono)' }}>
-              {fmt(p.liability.currentValue)} € → {fmt(p.nouvelEncours)} €
-            </p>
-            {status === 'updated' && (
-              <p style={{ fontSize: 12, color: 'var(--success)', margin: 0 }}>✓ Encours mis à jour</p>
-            )}
-            {status === 'ignored' && (
-              <p style={{ fontSize: 12, color: 'var(--ink-tertiary)', margin: 0 }}>Ignoré</p>
-            )}
-            {!status && (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-sm" onClick={() => applyUpdate(p)}>
-                  Mettre à jour
-                </button>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => setResolved((r) => ({ ...r, [p.liability.id]: 'ignored' }))}
-                >
-                  Ignorer
-                </button>
-              </div>
-            )}
-          </div>
-        )
-      })}
     </div>
   )
 }

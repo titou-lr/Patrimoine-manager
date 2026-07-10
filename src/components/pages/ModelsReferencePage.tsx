@@ -234,8 +234,8 @@ function FormulaCard({
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
             {vars.map(v => (
               <div key={v.sym} style={{ display: 'flex', gap: 12, alignItems: 'baseline', fontSize: 12 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary-hover)', minWidth: 120, textAlign: 'right', flexShrink: 0 }}>
-                  {v.sym}
+                <span style={{ minWidth: 120, textAlign: 'right', flexShrink: 0 }}>
+                  <KatexFormula className="ktex-var">{v.sym}</KatexFormula>
                 </span>
                 <span style={{ color: 'var(--hairline-strong)', flexShrink: 0 }}>—</span>
                 <span style={{ color: 'var(--ink-subtle)' }}>{v.def}</span>
@@ -272,7 +272,7 @@ function ConstantTable({ rows }: { rows: { name: string; value: string; meaning:
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--hairline-soft)' : 'none' }}>
-              <td style={{ padding: '7px 14px', fontFamily: 'var(--font-mono)', color: 'var(--primary-hover)', fontSize: 11 }}>{r.name}</td>
+              <td style={{ padding: '7px 14px', fontFamily: 'var(--font-mono)', color: 'var(--gold)', fontSize: 11 }}>{r.name}</td>
               <td style={{ padding: '7px 14px', fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)' }}>{r.value}</td>
               <td style={{ padding: '7px 14px', color: 'var(--ink-subtle)' }}>{r.meaning}</td>
             </tr>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createChart, CandlestickSeries } from 'lightweight-charts'
 import { FinanceSelect } from '../ui/FinanceSelect'
-import { FINANCE_ASSETS } from '../../data/financeAssets'
+import { useAllAssets } from '../../store/useFinanceStore'
 import { fetchHistorical } from '../../services/priceService'
 import {
   createReplaySession, advanceReplayBar, placeReplayOrder, cancelReplayOrder,
@@ -139,14 +139,15 @@ export default function ReplayTab() {
   const [trailingPct, setTrailingPct] = useState('2')
   const [orderMsg, setOrderMsg] = useState<{ text: string; error: boolean } | null>(null)
 
+  const allAssets = useAllAssets()
   const filteredAssets = useMemo(() => {
     const q = assetSearch.toLowerCase()
-    return FINANCE_ASSETS.filter(a =>
+    return allAssets.filter(a =>
       a.name.toLowerCase().includes(q) || a.ticker.toLowerCase().includes(q)
     ).slice(0, 15)
-  }, [assetSearch])
+  }, [assetSearch, allAssets])
 
-  const selectedAsset = FINANCE_ASSETS.find(a => a.id === selectedAssetId)
+  const selectedAsset = allAssets.find(a => a.id === selectedAssetId)
 
   // Charge l'historique quand actif/période changent
   useEffect(() => {

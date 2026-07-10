@@ -96,12 +96,6 @@ export interface PatrimoineLiability {
   currency: string
   lastUpdatedAt: string
   notes?: string
-  /**
-   * Pointe vers BudgetCategory.id — purement informatif, aucune écriture
-   * croisée automatique. Le seul pont est la proposition post-import du
-   * relevé bancaire, confirmée explicitement par l'utilisateur.
-   */
-  linkedBudgetCategoryId?: string
   metadata?: PatrimoineMetadata
 }
 

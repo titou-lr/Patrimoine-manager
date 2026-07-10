@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { FinanceSelect } from '../ui/FinanceSelect'
-import { useFinanceStore, getAssetById } from '../../store/useFinanceStore'
-import { FINANCE_ASSETS } from '../../data/financeAssets'
+import { useFinanceStore, getAssetById, useAllAssets } from '../../store/useFinanceStore'
 import type { AlertCondition, PriceAlert } from '../../types/finance'
 import { conditionDisplay } from '../../services/alertsService'
 
@@ -26,7 +25,8 @@ export default function PriceAlertsTab() {
   const [note, setNote] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
 
-  const filteredAssets = FINANCE_ASSETS.filter(a =>
+  const allAssets = useAllAssets()
+  const filteredAssets = allAssets.filter(a =>
     assetSearch.length > 0 &&
     (a.name.toLowerCase().includes(assetSearch.toLowerCase()) ||
      a.ticker.toLowerCase().includes(assetSearch.toLowerCase()))

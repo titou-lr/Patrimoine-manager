@@ -302,7 +302,7 @@ export default function App() {
   const {
     addEnvelope, updateEnvelope, undo, redo,
     simulations, applyOnboarding, setDirty,
-    setActiveSimulation, addSimulation,
+    setActiveSimulation, addSimulation, renameSimulation,
   } = store
   const activeSim = selectActiveSim(store)
   const { envelopes, globalParams, isDirty, events } = activeSim
@@ -319,11 +319,23 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false)
   const [showEnvelopeSelector, setShowEnvelopeSelector] = useState(false)
   const [capModalOpen, setCapModalOpen] = useState(false)
-  const [_capModalDismissed, setCapModalDismissed] = useState(false)
+  const [capModalDismissed, setCapModalDismissed] = useState(false)
   const [capReachedByEnvelope, setCapReachedByEnvelope] = useState<Record<string, number>>({})
   const [feesImportTarget, setFeesImportTarget] = useState<{
     envelopeId: string; envelopeType: Envelope['type']; envelopeLabel: string
   } | null>(null)
+
+  // Renommage inline d'une simulation (double-clic sur le nom dans la sidebar)
+  const [editingSimId, setEditingSimId] = useState<string | null>(null)
+  const [editingSimName, setEditingSimName] = useState('')
+
+  function commitSimRename() {
+    if (editingSimId) {
+      const trimmed = editingSimName.trim()
+      if (trimmed) renameSimulation(editingSimId, trimmed)
+    }
+    setEditingSimId(null)
+  }
 
   const [runState, setRunState] = useState<RunState>(() =>
     computeRunState(envelopes, globalParams, events ?? [])
@@ -333,6 +345,7 @@ export default function App() {
     const sim = selectActiveSim(useStore.getState())
     setRunState(computeRunState(sim.envelopes, sim.globalParams, sim.events ?? []))
     setDirty(false)
+    setCapModalDismissed(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSim.id])
 
@@ -428,8 +441,11 @@ export default function App() {
         }
       }
       setCapReachedByEnvelope(caps)
-      if (Object.keys(caps).length > 0 && !capDismissed) {
+      if (Object.keys(caps).length > 0 && !capDismissed && !capModalDismissed) {
         setCapModalOpen(true)
+      } else {
+        // Résultats à jour → afficher la projection sur le tableau de bord
+        navigateTo('simulation_dashboard')
       }
     }, 0)
   }
@@ -441,6 +457,12 @@ export default function App() {
     setCapModalOpen(false)
     setCapModalDismissed(true)
     handleRunSimulation(true)
+  }
+
+  function handleCloseCapModal() {
+    setCapModalOpen(false)
+    setCapModalDismissed(true)
+    navigateTo('simulation_dashboard')
   }
 
   function handleOnboardingComplete(data: OnboardingResult) {
@@ -606,16 +628,45 @@ export default function App() {
                 <div key={sim.id}>
                   <div
                     className={`nav-item${isActive ? ' on' : ''}`}
-                    onClick={() => { if (!isActive) { setActiveSimulation(sim.id); navigateTo('simulation_dashboard') } }}
-                    title={`${sim.globalParams.duration} ans`}
+                    onClick={() => { if (!isActive && editingSimId !== sim.id) { setActiveSimulation(sim.id); navigateTo('simulation_dashboard') } }}
+                    title={editingSimId === sim.id ? undefined : `${sim.globalParams.duration} ans — double-clic pour renommer`}
                   >
                     <span className="dot" style={{
                       background: isActive ? 'var(--primary-hover)' : 'var(--hairline-strong)',
                       width: 6, height: 6,
                     }} />
-                    <span className="grow" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {sim.name}
-                    </span>
+                    {editingSimId === sim.id ? (
+                      <input
+                        autoFocus
+                        className="grow"
+                        value={editingSimName}
+                        onChange={e => setEditingSimName(e.target.value)}
+                        onBlur={commitSimRename}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') commitSimRename()
+                          if (e.key === 'Escape') setEditingSimId(null)
+                          e.stopPropagation()
+                        }}
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                          background: 'var(--surface-2)', border: '1px solid var(--primary-focus)',
+                          borderRadius: 'var(--r-xs)', outline: 'none', color: 'var(--ink)',
+                          font: 'inherit', padding: '1px 5px', minWidth: 0,
+                        }}
+                      />
+                    ) : (
+                      <span
+                        className="grow"
+                        style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        onDoubleClick={e => {
+                          e.stopPropagation()
+                          setEditingSimId(sim.id)
+                          setEditingSimName(sim.name)
+                        }}
+                      >
+                        {sim.name}
+                      </span>
+                    )}
                   </div>
                   {isActive && (
                     <div style={{
@@ -672,7 +723,6 @@ export default function App() {
             globalParams={runState.globalParams}
             onGoToEnvelopes={() => navigateTo('envelopes')}
             onGoToBudget={() => navigateTo('budget')}
-            onGoToSuccession={() => navigateTo('succession')}
             onToast={showToast}
           />
         )}
@@ -703,7 +753,6 @@ export default function App() {
             onRunSimulation={handleRunSimulation}
             onImportFees={handleImportFees}
             onAddEnvelope={() => setShowEnvelopeSelector(true)}
-            onOpenData={() => navigateTo('brokers')}
             capReachedByEnvelope={Object.keys(capReachedByEnvelope).length > 0 ? capReachedByEnvelope : undefined}
             onOpenCapModal={() => setCapModalOpen(true)}
           />
@@ -761,7 +810,7 @@ export default function App() {
           capReachedByEnvelope={capReachedByEnvelope}
           envelopes={envelopes}
           onApply={handleCapModalApply}
-          onClose={() => { setCapModalOpen(false); setCapModalDismissed(true) }}
+          onClose={handleCloseCapModal}
         />
       )}
 

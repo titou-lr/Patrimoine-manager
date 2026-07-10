@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
@@ -16,6 +17,11 @@ interface FinanceStore {
   watchlist: WatchlistItem[]
   addToWatchlist: (assetId: string) => void
   removeFromWatchlist: (assetId: string) => void
+
+  // Actifs ajoutés via la recherche dynamique Yahoo (fusionnés avec FINANCE_ASSETS)
+  customAssets: FinanceAsset[]
+  addCustomAsset: (asset: FinanceAsset) => void
+  removeCustomAsset: (id: string) => void
 
   priceAlerts: PriceAlert[]
   addPriceAlert: (alert: PriceAlert) => void
@@ -89,6 +95,16 @@ export const useFinanceStore = create<FinanceStore>()(
         })),
       removeFromWatchlist: (assetId) =>
         set((s) => ({ watchlist: s.watchlist.filter((w) => w.assetId !== assetId) })),
+
+      customAssets: [],
+      addCustomAsset: (asset) =>
+        set((s) => ({
+          customAssets: s.customAssets.some((a) => a.ticker === asset.ticker)
+            ? s.customAssets
+            : [...s.customAssets, asset],
+        })),
+      removeCustomAsset: (id) =>
+        set((s) => ({ customAssets: s.customAssets.filter((a) => a.id !== id) })),
 
       priceAlerts: [],
       addPriceAlert: (alert) => set((s) => ({ priceAlerts: [...s.priceAlerts, alert] })),
@@ -191,6 +207,7 @@ export const useFinanceStore = create<FinanceStore>()(
       name: 'patrimoine-finance',
       partialize: (s) => ({
         watchlist: s.watchlist,
+        customAssets: s.customAssets,
         priceAlerts: s.priceAlerts,
         aiApiKey: s.aiApiKey,
         autoRefreshInterval: s.autoRefreshInterval,
@@ -208,4 +225,11 @@ export const useFinanceStore = create<FinanceStore>()(
 
 export function getAssetById(id: string): FinanceAsset | undefined {
   return FINANCE_ASSETS.find((a) => a.id === id)
+    ?? useFinanceStore.getState().customAssets.find((a) => a.id === id)
+}
+
+/** Actifs statiques + actifs ajoutés via la recherche — hook réactif */
+export function useAllAssets(): FinanceAsset[] {
+  const custom = useFinanceStore((s) => s.customAssets)
+  return useMemo(() => (custom.length > 0 ? [...FINANCE_ASSETS, ...custom] : FINANCE_ASSETS), [custom])
 }

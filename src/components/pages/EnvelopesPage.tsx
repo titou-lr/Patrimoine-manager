@@ -590,13 +590,12 @@ interface Props {
   onRunSimulation: () => void
   onImportFees: (envelopeId: string) => void
   onAddEnvelope: () => void
-  onOpenData: () => void
   capReachedByEnvelope?: Record<string, number>
   onOpenCapModal?: () => void
 }
 
 export default function EnvelopesPage({
-  isDirty, isRunning, onRunSimulation, onImportFees, onAddEnvelope, onOpenData,
+  isDirty, isRunning, onRunSimulation, onImportFees, onAddEnvelope,
   capReachedByEnvelope, onOpenCapModal,
 }: Props) {
   const store = useStore()
@@ -636,6 +635,7 @@ export default function EnvelopesPage({
             disabled={isRunning}
             style={!isDirty && !isRunning ? { opacity: 0.6, cursor: 'default' } : undefined}
             data-tour-id="run-simulation-btn"
+            title="Calcule la projection et met à jour le tableau de bord (vous y serez redirigé)"
           >
             {isRunning
               ? <><IcRefresh className="spin" /> Calcul…</>
@@ -731,11 +731,11 @@ export default function EnvelopesPage({
 
           <div className="grow" />
 
-          {/* Indicateur cumulé */}
+          {/* Indicateur cumulé — chiffre clé de la page */}
           <div className="row" style={{ gap: 8, padding: '0 4px' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} />
-            <span className="mono" style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>
-              {formatEur(contributionSum)}/mois
+            <span className="mono" style={{ fontSize: 15, color: 'var(--ink)', fontWeight: 600, letterSpacing: '-0.3px' }}>
+              {formatEur(contributionSum)}<span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--ink-subtle)' }}>/mois</span>
             </span>
             <span style={{ fontSize: 11, color: 'var(--ink-tertiary)' }}>
               versements
@@ -805,7 +805,7 @@ export default function EnvelopesPage({
           key={sel.id}
           env={sel}
           onClose={() => setSelId(null)}
-          onOpenData={() => { onImportFees(sel.id); onOpenData() }}
+          onOpenData={() => onImportFees(sel.id)}
           globalParams={globalParams}
         />
       )}

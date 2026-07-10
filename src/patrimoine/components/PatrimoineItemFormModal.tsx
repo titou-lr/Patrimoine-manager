@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { usePatrimoineStore } from '../store/usePatrimoineStore'
-import { useBudgetStore } from '../../budget/store/useBudgetStore'
 import {
   ASSET_CATEGORY_META,
   LIABILITY_CATEGORY_META,
@@ -66,8 +65,6 @@ const inputStyle: React.CSSProperties = {
 
 export default function PatrimoineItemFormModal({ target, simulationEnvelopes, onClose }: Props) {
   const { upsertAsset, upsertLiability } = usePatrimoineStore()
-  // Lecture seule sur le store Budget — jamais d'écriture depuis le Patrimoine
-  const budgetCategories = useBudgetStore((s) => s.categories)
   const isAsset = target.kind === 'asset'
   const editing = target.item
 
@@ -85,9 +82,6 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
   const [notes, setNotes] = useState(editing?.notes ?? '')
   const [linkedEnvelopeId, setLinkedEnvelopeId] = useState(
     isAsset ? ((editing as PatrimoineAsset | undefined)?.linkedEnvelopeId ?? '') : ''
-  )
-  const [linkedBudgetCategoryId, setLinkedBudgetCategoryId] = useState(
-    !isAsset ? ((editing as PatrimoineLiability | undefined)?.linkedBudgetCategoryId ?? '') : ''
   )
   const [metadata, setMetadata] = useState<PatrimoineMetadata>(editing?.metadata ?? {})
 
@@ -175,7 +169,6 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
         currency: editing?.currency ?? 'EUR',
         lastUpdatedAt: now,
         notes: notes.trim() || undefined,
-        linkedBudgetCategoryId: linkedBudgetCategoryId || undefined,
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       })
     }
@@ -381,32 +374,6 @@ export default function PatrimoineItemFormModal({ target, simulationEnvelopes, o
                 </>
               )}
             </div>
-          )}
-
-          {/* ── Catégorie budget associée (passifs) ─────────────────────── */}
-          {!isAsset && (
-            <>
-              <Field label="Catégorie budget associée (informatif)">
-                <select value={linkedBudgetCategoryId} onChange={(e) => setLinkedBudgetCategoryId(e.target.value)} style={inputStyle}>
-                  <option value="">— Aucune liaison —</option>
-                  {budgetCategories
-                    .filter((c) => c.group !== 'income')
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>{c.label}</option>
-                    ))}
-                </select>
-              </Field>
-              {linkedBudgetCategoryId && (
-                <div className="caption" style={{
-                  fontSize: 11.5, color: 'var(--primary-hover)',
-                  padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 'var(--r)',
-                }}>
-                  ℹ Après chaque import de relevé bancaire, les remboursements détectés dans
-                  cette catégorie déclencheront une proposition de mise à jour de l'encours —
-                  appliquée uniquement sur votre confirmation.
-                </div>
-              )}
-            </>
           )}
 
           <Field label="Notes">

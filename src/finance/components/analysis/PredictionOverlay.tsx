@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import type { Candle } from '../../types/finance'
 import type { PredictionResult } from '../../engine/predictionEngine'
-import { linearPrediction, emaPrediction, monteCarloPrediction } from '../../engine/predictionEngine'
+import { linearPrediction, emaPrediction, monteCarloPrediction, fibonacciPrediction } from '../../engine/predictionEngine'
 
-type ModelKey = 'none' | 'linear' | 'ema' | 'montecarlo'
+type ModelKey = 'none' | 'linear' | 'ema' | 'montecarlo' | 'fibonacci'
 
 interface Props {
   candles: Candle[]
@@ -14,13 +15,15 @@ const MODELS: Array<{ key: ModelKey; label: string; desc: string }> = [
   { key: 'none', label: 'Aucune', desc: '' },
   { key: 'linear', label: 'Régression', desc: 'Extrapolation linéaire de tendance' },
   { key: 'ema', label: 'EMA', desc: 'Projection basée sur la pente EMA20' },
+  { key: 'fibonacci', label: 'Fibonacci', desc: 'Retracements & extensions du dernier swing — supports/résistances projetés' },
   { key: 'montecarlo', label: 'Monte-Carlo', desc: 'GBM — P10/P50/P90 sur 200 trajectoires' },
 ]
 
 export function PredictionOverlay({ candles, onPredictionChange, activePrediction }: Props) {
   const activeKey: ModelKey = activePrediction?.model ?? 'none'
+  const [fibLookback, setFibLookback] = useState(90)
 
-  function selectModel(key: ModelKey) {
+  function selectModel(key: ModelKey, lookback = fibLookback) {
     if (candles.length < 30) return
     if (key === 'none') {
       onPredictionChange(null)
@@ -29,6 +32,7 @@ export function PredictionOverlay({ candles, onPredictionChange, activePredictio
     let result: PredictionResult
     if (key === 'linear') result = linearPrediction(candles)
     else if (key === 'ema') result = emaPrediction(candles)
+    else if (key === 'fibonacci') result = fibonacciPrediction(candles, 30, lookback)
     else result = monteCarloPrediction(candles)
     onPredictionChange(result)
   }
@@ -64,8 +68,53 @@ export function PredictionOverlay({ candles, onPredictionChange, activePredictio
         ))}
       </div>
 
+      {/* Paramètre + niveaux Fibonacci */}
+      {activeKey === 'fibonacci' && activePrediction?.levels && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+            <span style={{ color: 'var(--ink-subtle)' }}>Fenêtre de swing (bougies)</span>
+            <input
+              type="number"
+              min={20}
+              max={500}
+              value={fibLookback}
+              onChange={e => {
+                const v = Math.max(20, Math.min(500, Number(e.target.value) || 90))
+                setFibLookback(v)
+                selectModel('fibonacci', v)
+              }}
+              style={{
+                width: 58, background: 'var(--bg-elevated)', border: '1px solid var(--hairline)',
+                borderRadius: 'var(--r-sm)', padding: '3px 6px', fontSize: 11,
+                color: 'var(--ink)', outline: 'none', fontFamily: 'var(--font-mono)', textAlign: 'right',
+              }}
+            />
+          </div>
+          {activePrediction.swing && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+              <span style={{ color: 'var(--ink-subtle)' }}>
+                Swing {activePrediction.swing.direction === 'up' ? 'haussier ↗' : 'baissier ↘'}
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-secondary)' }}>
+                {activePrediction.swing.low.toFixed(2)} → {activePrediction.swing.high.toFixed(2)}
+              </span>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 168, overflowY: 'auto' }}>
+            {activePrediction.levels.map(lvl => (
+              <div key={`${lvl.kind}-${lvl.ratio}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                <span style={{ color: lvl.kind === 'retracement' ? 'var(--gold)' : 'var(--primary-hover)' }}>
+                  {lvl.kind === 'retracement' ? 'Ret.' : 'Ext.'} {lvl.label}
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{lvl.price.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Résultat J+30 */}
-      {activePrediction && p30 && (
+      {activePrediction && p30 && activeKey !== 'fibonacci' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
           {/* Confiance */}
           <div>

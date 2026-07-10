@@ -1,12 +1,13 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useFinanceStore, getAssetById } from '../../store/useFinanceStore'
 import { fetchHistorical, fetchQuotes } from '../../services/priceService'
-import { sma, ema, bollinger } from '../../services/indicatorsService'
-import type { Candle, HistoricalPeriod } from '../../types/finance'
+import { bollinger } from '../../services/indicatorsService'
+import type { Candle, HistoricalPeriod, CandleInterval } from '../../types/finance'
 import type { PredictionResult } from '../../engine/predictionEngine'
 import type { ActiveOverlays } from './IndicatorPanel'
 import { CandleChart } from './CandleChart'
 import { IndicatorPanel } from './IndicatorPanel'
+import { OscillatorPanel } from './OscillatorPanel'
 import { PredictionOverlay } from './PredictionOverlay'
 import { formatPrice } from '../../../utils/format'
 
@@ -16,25 +17,26 @@ export default function AnalysisTab() {
 
   const [candles, setCandles] = useState<Candle[]>([])
   const [period, setPeriod] = useState<HistoricalPeriod>('1M')
+  const [interval, setInterval] = useState<CandleInterval | 'auto'>('auto')
   const [chartType, setChartType] = useState<'candlestick' | 'line'>('candlestick')
   const [activeOverlays, setActiveOverlays] = useState<ActiveOverlays>({
-    sma20: false, sma50: false, ema20: false, bollinger: false, volume: false,
+    bollinger: false, volume: false,
   })
   const [activePrediction, setActivePrediction] = useState<PredictionResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [price, setPrice] = useState<{ value: number; changePct: number } | null>(null)
 
-  // Fetch candles on asset or period change
+  // Fetch candles on asset, period or timeframe change
   useEffect(() => {
     if (!asset) return
     setLoading(true)
     setCandles([])
     setActivePrediction(null)
-    fetchHistorical(asset.ticker, period).then(data => {
+    fetchHistorical(asset.ticker, period, interval === 'auto' ? undefined : interval).then(data => {
       setCandles(data)
       setLoading(false)
     })
-  }, [asset?.ticker, period])
+  }, [asset?.ticker, period, interval])
 
   // Fetch quote for header price
   useEffect(() => {
@@ -48,9 +50,6 @@ export default function AnalysisTab() {
   // Overlays calculés
   const closes = useMemo(() => candles.map(c => c.close), [candles])
 
-  const sma20vals = useMemo(() => activeOverlays.sma20 ? sma(closes, 20) : undefined, [closes, activeOverlays.sma20])
-  const sma50vals = useMemo(() => activeOverlays.sma50 ? sma(closes, 50) : undefined, [closes, activeOverlays.sma50])
-  const ema20vals = useMemo(() => activeOverlays.ema20 ? ema(closes, 20) : undefined, [closes, activeOverlays.ema20])
   const bollVals = useMemo(() => activeOverlays.bollinger ? bollinger(closes, 20, 2) : null, [closes, activeOverlays.bollinger])
 
   if (!asset) {
@@ -82,14 +81,14 @@ export default function AnalysisTab() {
         </div>
         {price && (
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 27, fontWeight: 600, letterSpacing: '-0.8px', color: 'var(--ink)', lineHeight: 1.15 }}>
               {formatPrice(price.value, asset.currency)}
             </div>
             <div style={{
               fontSize: 13, fontWeight: 600,
               color: price.changePct >= 0 ? 'var(--success)' : 'var(--danger)',
             }}>
-              {price.changePct >= 0 ? '+' : ''}{price.changePct.toFixed(2)}%
+              {price.changePct >= 0 ? '+' : ''}{price.changePct.toFixed(2)}% <span style={{ color: 'var(--ink-tertiary)', fontWeight: 400, fontSize: 11 }}>24h</span>
             </div>
           </div>
         )}
@@ -122,22 +121,25 @@ export default function AnalysisTab() {
               <p className="caption">Aucune donnée disponible pour cette période.</p>
             </div>
           ) : (
-            <div className="panel" style={{ padding: 12, height: 420 }}>
-              <CandleChart
-                candles={candles}
-                period={period}
-                onPeriodChange={setPeriod}
-                chartType={chartType}
-                onChartTypeChange={setChartType}
-                showVolume={activeOverlays.volume}
-                prediction={activePrediction}
-                sma20={sma20vals}
-                sma50={sma50vals}
-                ema20={ema20vals}
-                bollingerUpper={bollVals?.upper}
-                bollingerLower={bollVals?.lower}
-                bollingerMiddle={bollVals?.middle}
-              />
+            <div className="col" style={{ gap: 8 }}>
+              <div className="panel" style={{ padding: 12, height: 420 }}>
+                <CandleChart
+                  candles={candles}
+                  period={period}
+                  onPeriodChange={setPeriod}
+                  interval={interval}
+                  onIntervalChange={setInterval}
+                  chartType={chartType}
+                  onChartTypeChange={setChartType}
+                  showVolume={activeOverlays.volume}
+                  prediction={activePrediction}
+                  bollingerUpper={bollVals?.upper}
+                  bollingerLower={bollVals?.lower}
+                  bollingerMiddle={bollVals?.middle}
+                />
+              </div>
+              {/* Sous-graphiques oscillateurs (RSI / Stoch RSI) */}
+              <OscillatorPanel candles={candles} />
             </div>
           )}
         </div>

@@ -1,14 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { Candle } from '../../types/finance'
 import {
-  sma, ema, rsi as calcRsi, macd as calcMacd, bollinger, atr as calcAtr, obv as calcObv,
-  lastValue, annualizedVolatility,
+  rsi as calcRsi, macd as calcMacd, bollinger, atr as calcAtr, obv as calcObv,
+  stochRsi as calcStochRsi, lastValue, annualizedVolatility,
 } from '../../services/indicatorsService'
 
 export interface ActiveOverlays {
-  sma20: boolean
-  sma50: boolean
-  ema20: boolean
   bollinger: boolean
   volume: boolean
 }
@@ -44,21 +41,9 @@ function Toggle({ active, onChange, color, label }: { active: boolean; onChange:
   )
 }
 
-function ValueBadge({ label, value, unit = '' }: { label: string; value: number | null; unit?: string }) {
-  if (value == null) return null
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-      <span style={{ color: 'var(--ink-subtle)' }}>{label}</span>
-      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>
-        {value.toFixed(2)}{unit}
-      </span>
-    </div>
-  )
-}
-
 export function IndicatorPanel({ candles, onOverlaysChange }: Props) {
   const [overlays, setOverlays] = useState<ActiveOverlays>({
-    sma20: false, sma50: false, ema20: false, bollinger: false, volume: false,
+    bollinger: false, volume: false,
   })
 
   function toggleOverlay(key: keyof ActiveOverlays) {
@@ -69,19 +54,16 @@ export function IndicatorPanel({ candles, onOverlaysChange }: Props) {
 
   const closes = useMemo(() => candles.map(c => c.close), [candles])
 
-  const sma20vals = useMemo(() => sma(closes, 20), [closes])
-  const sma50vals = useMemo(() => sma(closes, 50), [closes])
-  const ema20vals = useMemo(() => ema(closes, 20), [closes])
   const bollVals = useMemo(() => bollinger(closes, 20, 2), [closes])
   const rsiVals = useMemo(() => calcRsi(closes, 14), [closes])
+  const stochVals = useMemo(() => calcStochRsi(closes, 14, 14, 3, 3), [closes])
   const macdVals = useMemo(() => calcMacd(closes), [closes])
   const atrVals = useMemo(() => calcAtr(candles, 14), [candles])
   const obvVals = useMemo(() => calcObv(candles), [candles])
   const vol = useMemo(() => annualizedVolatility(closes.slice(-60)), [closes])
 
-  const curSma20 = lastValue(sma20vals)
-  const curSma50 = lastValue(sma50vals)
-  const curEma20 = lastValue(ema20vals)
+  const curStochK = lastValue(stochVals.k)
+  const curStochD = lastValue(stochVals.d)
   const curBollUpper = lastValue(bollVals.upper)
   const curBollLower = lastValue(bollVals.lower)
   const curRsi = lastValue(rsiVals)
@@ -110,12 +92,6 @@ export function IndicatorPanel({ candles, onOverlaysChange }: Props) {
       <div className="panel" style={{ padding: '10px 12px' }}>
         <div className="eyebrow" style={{ marginBottom: 8 }}>Tendance</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <Toggle active={overlays.sma20} onChange={() => toggleOverlay('sma20')} color="#f59e0b" label="SMA 20" />
-          <ValueBadge label="" value={curSma20} />
-          <Toggle active={overlays.sma50} onChange={() => toggleOverlay('sma50')} color="#8b5cf6" label="SMA 50" />
-          <ValueBadge label="" value={curSma50} />
-          <Toggle active={overlays.ema20} onChange={() => toggleOverlay('ema20')} color="#06b6d4" label="EMA 20" />
-          <ValueBadge label="" value={curEma20} />
           <Toggle active={overlays.bollinger} onChange={() => toggleOverlay('bollinger')} color="rgba(94,106,210,0.7)" label="Bollinger (20,2)" />
           {curBollUpper != null && curBollLower != null && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-subtle)', paddingLeft: 16 }}>
@@ -157,6 +133,15 @@ export function IndicatorPanel({ candles, onOverlaysChange }: Props) {
                 }} />
               </div>
             )}
+          </div>
+
+          {/* Stoch RSI */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+            <span style={{ color: 'var(--ink-secondary)' }}>Stoch RSI (14,3,3)</span>
+            <span style={{ color: 'var(--ink-subtle)' }}>
+              %K <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{curStochK != null ? curStochK.toFixed(1) : '—'}</span>
+              {' '}· %D <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{curStochD != null ? curStochD.toFixed(1) : '—'}</span>
+            </span>
           </div>
 
           {/* MACD */}

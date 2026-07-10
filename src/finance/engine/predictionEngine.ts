@@ -8,11 +8,20 @@ export interface PredictionPoint {
   upper?: number    // intervalle de confiance haut
 }
 
+export interface FibLevel {
+  label: string                       // ex. "61.8 %"
+  ratio: number                       // 0.618
+  price: number
+  kind: 'retracement' | 'extension'
+}
+
 export interface PredictionResult {
-  model: 'linear' | 'ema' | 'montecarlo'
+  model: 'linear' | 'ema' | 'montecarlo' | 'fibonacci'
   label: string
   points: PredictionPoint[]
   confidence: number  // 0-1, fiabilité estimée du modèle
+  levels?: FibLevel[] // Fibonacci : niveaux support/résistance projetés
+  swing?: { high: number; low: number; direction: 'up' | 'down'; lookback: number }
 }
 
 const HORIZON_DAYS = 30
@@ -135,6 +144,72 @@ export function monteCarloPrediction(candles: Candle[], horizonDays = HORIZON_DA
   }
 
   return { model: 'montecarlo', label: 'Monte-Carlo (P10/P50/P90)', points, confidence: 0.45 }
+}
+
+// ---- Modèle 4 : Niveaux de Fibonacci ----
+
+const FIB_RETRACEMENTS = [0.236, 0.382, 0.5, 0.618, 0.786]
+const FIB_EXTENSIONS = [1, 1.272, 1.618, 2.618]
+
+/**
+ * Identifie le dernier swing haut/bas (plus haut high / plus bas low sur les
+ * `lookback` dernières bougies) puis projette retracements et extensions
+ * comme niveaux de support/résistance sur l'horizon J+30.
+ *
+ * Convention (swing haussier, low avant high) :
+ *   retracement r → high − (high − low) × r
+ *   extension   r → low + (high − low) × r   (100 % = high)
+ * Swing baissier : symétrique.
+ */
+export function fibonacciPrediction(
+  candles: Candle[],
+  horizonDays = HORIZON_DAYS,
+  lookback = 90
+): PredictionResult {
+  const recent = candles.slice(-Math.min(lookback, candles.length))
+  let hiIdx = 0, loIdx = 0
+  recent.forEach((c, i) => {
+    if (c.high > recent[hiIdx].high) hiIdx = i
+    if (c.low < recent[loIdx].low) loIdx = i
+  })
+  const high = recent[hiIdx].high
+  const low = recent[loIdx].low
+  const range = Math.max(high - low, 1e-9)
+  const direction: 'up' | 'down' = loIdx <= hiIdx ? 'up' : 'down'
+
+  const levels: FibLevel[] = [
+    ...FIB_RETRACEMENTS.map(r => ({
+      label: `${(r * 100).toFixed(1)} %`,
+      ratio: r,
+      price: direction === 'up' ? high - range * r : low + range * r,
+      kind: 'retracement' as const,
+    })),
+    ...FIB_EXTENSIONS.map(r => ({
+      label: `${(r * 100).toFixed(1)} %`,
+      ratio: r,
+      price: direction === 'up' ? low + range * r : high - range * r,
+      kind: 'extension' as const,
+    })),
+  ]
+
+  // Points plats au dernier cours : étendent l'axe temporel à J+30 pour que
+  // les niveaux horizontaux se lisent comme une projection.
+  const lastClose = candles[candles.length - 1].close
+  const lastTime = candles[candles.length - 1].time
+  const dayMs = 24 * 3600 * 1000
+  const points: PredictionPoint[] = []
+  for (let d = 1; d <= horizonDays; d++) {
+    points.push({ time: lastTime + d * dayMs, value: lastClose })
+  }
+
+  return {
+    model: 'fibonacci',
+    label: `Fibonacci (swing ${lookback} bougies)`,
+    points,
+    confidence: 0.4,
+    levels,
+    swing: { high, low, direction, lookback },
+  }
 }
 
 // ---- Helpers ----

@@ -47,6 +47,14 @@ export default function NumberInput({
     setRawValue(e.target.value)
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+    if (e.key === 'Escape') {
+      setRawValue(String(prevValue.current))
+      ;(e.target as HTMLInputElement).blur()
+    }
+  }
+
   function handleBlur() {
     setFocused(false)
     const parsed = parseFloat(rawValue.replace(',', '.'))
@@ -88,6 +96,7 @@ export default function NumberInput({
         onFocus={handleFocus}
         onChange={handleChange}
         onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         aria-label={suffix ? `valeur en ${suffix}` : undefined}
         className={`w-full bg-elevated border rounded-lg font-mono text-foreground focus:outline-none focus:ring-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed tabular-nums ${inputClass} ${borderClass}`}
       />

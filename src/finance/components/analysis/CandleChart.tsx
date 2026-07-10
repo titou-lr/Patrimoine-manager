@@ -5,20 +5,21 @@ import {
   LineSeries,
   HistogramSeries,
 } from 'lightweight-charts'
-import type { Candle, HistoricalPeriod } from '../../types/finance'
+import type { Candle, HistoricalPeriod, CandleInterval } from '../../types/finance'
 import type { PredictionResult } from '../../engine/predictionEngine'
+
+type IntervalChoice = CandleInterval | 'auto'
 
 interface Props {
   candles: Candle[]
   period: HistoricalPeriod
   onPeriodChange: (p: HistoricalPeriod) => void
+  interval: IntervalChoice
+  onIntervalChange: (i: IntervalChoice) => void
   chartType: 'candlestick' | 'line'
   onChartTypeChange: (t: 'candlestick' | 'line') => void
   showVolume: boolean
   prediction?: PredictionResult | null
-  sma20?: (number | null)[]
-  sma50?: (number | null)[]
-  ema20?: (number | null)[]
   bollingerUpper?: (number | null)[]
   bollingerLower?: (number | null)[]
   bollingerMiddle?: (number | null)[]
@@ -26,9 +27,22 @@ interface Props {
 
 const PERIODS: HistoricalPeriod[] = ['1D', '1W', '1M', '3M', '6M', '1Y', '5Y']
 
+const INTERVALS: { value: IntervalChoice; label: string }[] = [
+  { value: 'auto', label: 'Auto' },
+  { value: '1m',   label: '1min' },
+  { value: '5m',   label: '5min' },
+  { value: '15m',  label: '15min' },
+  { value: '1h',   label: '1h' },
+  { value: '4h',   label: '4h' },
+  { value: '1d',   label: '1D' },
+  { value: '1wk',  label: '1W' },
+  { value: '1mo',  label: '1M' },
+]
+
 export function CandleChart({
-  candles, period, onPeriodChange, chartType, onChartTypeChange,
-  showVolume, prediction, sma20, sma50, ema20,
+  candles, period, onPeriodChange, interval, onIntervalChange,
+  chartType, onChartTypeChange,
+  showVolume, prediction,
   bollingerUpper, bollingerLower, bollingerMiddle,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -72,8 +86,9 @@ export function CandleChart({
       open: c.open, high: c.high, low: c.low, close: c.close,
     }))
 
+    let mainSeries: ReturnType<typeof chart.addSeries>
     if (chartType === 'candlestick') {
-      const series = chart.addSeries(CandlestickSeries, {
+      mainSeries = chart.addSeries(CandlestickSeries, {
         upColor: '#4cb782',
         downColor: '#eb5757',
         borderUpColor: '#4cb782',
@@ -81,46 +96,13 @@ export function CandleChart({
         wickUpColor: '#4cb782',
         wickDownColor: '#eb5757',
       })
-      series.setData(lwCandles)
+      mainSeries.setData(lwCandles)
     } else {
-      const series = chart.addSeries(LineSeries, {
+      mainSeries = chart.addSeries(LineSeries, {
         color: '#5e6ad2',
         lineWidth: 2,
       })
-      series.setData(lwCandles.map(c => ({ time: c.time, value: c.close })))
-    }
-
-    // Overlay SMA 20
-    if (sma20) {
-      const s = chart.addSeries(LineSeries, { color: '#f59e0b', lineWidth: 1, title: 'SMA20' })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = candles.reduce<any[]>((acc, c, i) => {
-        if (sma20[i] != null) acc.push({ time: Math.floor(c.time / 1000) as unknown as import('lightweight-charts').Time, value: sma20[i]! })
-        return acc
-      }, [])
-      s.setData(data)
-    }
-
-    // Overlay SMA 50
-    if (sma50) {
-      const s = chart.addSeries(LineSeries, { color: '#8b5cf6', lineWidth: 1, title: 'SMA50' })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = candles.reduce<any[]>((acc, c, i) => {
-        if (sma50[i] != null) acc.push({ time: Math.floor(c.time / 1000) as unknown as import('lightweight-charts').Time, value: sma50[i]! })
-        return acc
-      }, [])
-      s.setData(data)
-    }
-
-    // Overlay EMA 20
-    if (ema20) {
-      const s = chart.addSeries(LineSeries, { color: '#06b6d4', lineWidth: 1, title: 'EMA20', lineStyle: 1 })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = candles.reduce<any[]>((acc, c, i) => {
-        if (ema20[i] != null) acc.push({ time: Math.floor(c.time / 1000) as unknown as import('lightweight-charts').Time, value: ema20[i]! })
-        return acc
-      }, [])
-      s.setData(data)
+      mainSeries.setData(lwCandles.map(c => ({ time: c.time, value: c.close })))
     }
 
     // Bollinger Bands
@@ -138,6 +120,20 @@ export function CandleChart({
         if (bollingerLower[i] != null) acc.push({ time: Math.floor(c.time / 1000) as unknown as import('lightweight-charts').Time, value: bollingerLower[i]! })
         return acc
       }, []))
+    }
+
+    // Niveaux de Fibonacci (modèle 'fibonacci') — lignes horizontales annotées
+    if (prediction?.levels?.length) {
+      for (const lvl of prediction.levels) {
+        mainSeries.createPriceLine({
+          price: lvl.price,
+          color: lvl.kind === 'retracement' ? 'rgba(226,181,80,0.75)' : 'rgba(130,143,255,0.65)',
+          lineWidth: 1,
+          lineStyle: lvl.ratio === 0.5 || lvl.ratio === 1 ? 0 : 2,
+          axisLabelVisible: true,
+          title: `Fib ${lvl.label} · ${lvl.price.toFixed(2)}`,
+        })
+      }
     }
 
     // Overlay Prédiction
@@ -195,7 +191,7 @@ export function CandleChart({
       ro.disconnect()
       if (chartRef.current) { chartRef.current.remove(); chartRef.current = null }
     }
-  }, [candles, chartType, showVolume, prediction, sma20, sma50, ema20,
+  }, [candles, chartType, showVolume, prediction,
     bollingerUpper, bollingerLower, bollingerMiddle])
 
   return (
@@ -224,6 +220,31 @@ export function CandleChart({
             </button>
           ))}
         </div>
+        {/* Timeframe des chandeliers (unité de temps, indépendante de la période) */}
+        <div style={{ display: 'flex', gap: 3, alignItems: 'center' }} title="Unité de temps des chandeliers">
+          <span style={{ fontSize: 10, color: 'var(--ink-tertiary)', marginRight: 2, textTransform: 'uppercase', letterSpacing: 0.4 }}>UT</span>
+          {INTERVALS.map(iv => (
+            <button
+              key={iv.value}
+              onClick={() => onIntervalChange(iv.value)}
+              style={{
+                padding: '3px 6px',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: interval === iv.value ? 600 : 400,
+                background: interval === iv.value ? 'var(--surface-4)' : 'transparent',
+                color: interval === iv.value ? 'var(--ink)' : 'var(--ink-tertiary)',
+                border: '1px solid ' + (interval === iv.value ? 'var(--hairline-strong)' : 'transparent'),
+                borderRadius: 'var(--r-xs)',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {iv.label}
+            </button>
+          ))}
+        </div>
+
         {/* Type de graphique */}
         <div style={{ display: 'flex', gap: 4 }}>
           {(['candlestick', 'line'] as const).map(t => (

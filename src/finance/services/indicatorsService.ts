@@ -43,6 +43,49 @@ export function rsi(closes: number[], period = 14): (number | null)[] {
   return result
 }
 
+// ---- Stochastic RSI ----
+
+export interface StochRsiResult {
+  k: (number | null)[]   // %K lissé
+  d: (number | null)[]   // %D = SMA(%K, dSmooth)
+}
+
+/** SMA glissante sur un tableau contenant des null (fenêtre valide uniquement) */
+function smaNullable(values: (number | null)[], period: number): (number | null)[] {
+  return values.map((_, i) => {
+    if (i < period - 1) return null
+    const slice = values.slice(i - period + 1, i + 1)
+    if (slice.some(v => v == null)) return null
+    return (slice as number[]).reduce((a, b) => a + b, 0) / period
+  })
+}
+
+/**
+ * Stochastic RSI — stochastique appliqué à la série RSI.
+ * Défauts TradingView : StochRSI(14, 14, 3, 3).
+ */
+export function stochRsi(
+  closes: number[],
+  rsiPeriod = 14,
+  stochPeriod = 14,
+  kSmooth = 3,
+  dSmooth = 3
+): StochRsiResult {
+  const rsiVals = rsi(closes, rsiPeriod)
+  const rawStoch: (number | null)[] = rsiVals.map((v, i) => {
+    if (v == null || i < stochPeriod - 1) return null
+    const slice = rsiVals.slice(i - stochPeriod + 1, i + 1)
+    if (slice.some(x => x == null)) return null
+    const nums = slice as number[]
+    const min = Math.min(...nums)
+    const max = Math.max(...nums)
+    return max === min ? 0 : ((v - min) / (max - min)) * 100
+  })
+  const k = smaNullable(rawStoch, kSmooth)
+  const d = smaNullable(k, dSmooth)
+  return { k, d }
+}
+
 // ---- MACD ----
 
 export interface MACDResult {

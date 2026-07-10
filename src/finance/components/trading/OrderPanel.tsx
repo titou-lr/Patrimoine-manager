@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useFinanceStore, getAssetById } from '../../store/useFinanceStore'
-import { FINANCE_ASSETS } from '../../data/financeAssets'
+import { useFinanceStore, getAssetById, useAllAssets } from '../../store/useFinanceStore'
 import { fetchHistorical, fetchQuotes } from '../../services/priceService'
 import { executeMarketOrder, computeCommission, halfSpreadRate } from '../../engine/tradingEngine'
 import { computePositionSize } from '../../engine/positionSizing'
@@ -101,12 +100,13 @@ export default function OrderPanel({ accountId, assetId: propAssetId }: Props) {
   const [plannedStop, setPlannedStop] = useState<number | null>(null)
   const [autoPlaceStop, setAutoPlaceStop] = useState(true)
 
+  const allAssets = useAllAssets()
   const filteredAssets = useMemo(() => {
     const q = search.toLowerCase()
-    return FINANCE_ASSETS.filter(a =>
+    return allAssets.filter(a =>
       a.name.toLowerCase().includes(q) || a.ticker.toLowerCase().includes(q)
     ).slice(0, 20)
-  }, [search])
+  }, [search, allAssets])
 
   const selectedAsset = selectedAssetId ? getAssetById(selectedAssetId) : null
 

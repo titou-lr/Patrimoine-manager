@@ -79,6 +79,11 @@ export interface PriceAlert {
 
 export type HistoricalPeriod = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y'
 
+// ---- Timeframe des chandeliers (indépendant de la période) ----
+// 'auto' = mapping historique période → intervalle (comportement legacy)
+
+export type CandleInterval = '1m' | '5m' | '15m' | '1h' | '4h' | '1d' | '1wk' | '1mo'
+
 // ---- Sous-onglets Finance ----
 
 export type FinanceTab = 'market' | 'analysis' | 'trading' | 'journal' | 'replay' | 'screener' | 'ai' | 'alerts'

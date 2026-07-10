@@ -616,8 +616,12 @@ Les résultats de simulation ne sont **pas** recalculés en continu. Le flux est
 
 **States App.tsx liés aux plafonds** :
 - `capModalOpen: boolean` — contrôle l'affichage de `CapOverflowModal`
-- `capModalDismissed: boolean` — `true` après fermeture sans appliquer (évite de rouvrir la modal à chaque re-run)
+- `capModalDismissed: boolean` — `true` après fermeture sans appliquer ; **lu par `handleRunSimulation`** (v1.3.4) pour ne pas rouvrir la modal à chaque re-run ; réinitialisé à `false` au changement de simulation active
 - `capReachedByEnvelope: Record<string, number>` — map `envelopeId → capReachedYear` issue de la dernière simulation
+
+**Redirection post-run (v1.3.4)** : à la fin de `handleRunSimulation`, si la modal plafond ne s'ouvre pas, navigation automatique vers `'simulation_dashboard'` (idem à la fermeture/application de `CapOverflowModal`). Le bouton « Lancer la simulation » porte un tooltip l'annonçant.
+
+**Renommage (v1.3.4)** : double-clic sur le nom d'une simulation dans la sidebar → input inline (Entrée valide via `renameSimulation`, Échap annule).
 
 ## Navigation (AppPage)
 
@@ -630,7 +634,7 @@ type AppPage =
 
 **Pages transverses** (sidebar haut, toujours accessibles) :
 - **`'patrimoine'`** → `DashboardPatrimoinePage` — patrimoine réel actuel, snapshots, saisie (Cmd+9 / G P) — **page d'accueil**
-- **`'succession'`** → `SuccessionPage` — droits de succession projetés (Cmd+0 / G S) — **entrée sidebar dédiée** sous Patrimoine (icône cadeau) ; le bouton « Succession / Donation » du header Patrimoine reste comme accès secondaire
+- **`'succession'`** → `SuccessionPage` — droits de succession projetés (Cmd+0 / G S) — **entrée sidebar dédiée** sous Patrimoine (icône cadeau), unique point d'accès (l'ancien bouton « Succession / Donation » du header Patrimoine a été supprimé en v1.3.3)
 - **`'finance'`** → `FinancePage` — marchés temps réel, trading paper, backtest, IA (Cmd+4 / G F)
 - **`'education'`** → `EducationPage` — 7 modules de cours interactifs (Cmd+5 / G U)
 - **`'brokers'`** → `BrokersPage` — comparateur de courtiers, import de frais (Cmd+6 / G B)
@@ -811,8 +815,8 @@ src/finance/
 ├── store/useFinanceStore.ts      # Store Zustand dédié — clé persist 'patrimoine-finance'
 ├── data/financeAssets.ts         # FINANCE_ASSETS[] — liste statique ~100 actifs (CAC40, S&P500, ETF, crypto, forex, matières premières, obligations)
 ├── services/
-│   ├── priceService.ts           # fetchQuotes(), fetchHistorical(), loadHistCache(), clearPriceCache() — Yahoo Finance API
-│   ├── indicatorsService.ts      # Fonctions pures : sma, ema, rsi, macd, bollinger, atr, obv, annualizedVolatility
+│   ├── priceService.ts           # fetchQuotes(), fetchHistorical(ticker, period, interval?), aggregateCandles(), searchSymbols() (recherche Yahoo), loadHistCache(), clearPriceCache()
+│   ├── indicatorsService.ts      # Fonctions pures : sma, ema, rsi, stochRsi, macd, bollinger, atr, obv, annualizedVolatility
 │   └── alertsService.ts          # checkAlerts(), conditionDisplay()
 ├── engine/
 │   ├── tradingEngine.ts          # fillOrder(), executeMarketOrder(), checkPendingOrders(), computeCommission(), applySlippage(), computeAccountStats(), updatePositionPrices()
@@ -836,10 +840,11 @@ src/finance/
     │   ├── MarketTab.tsx          # Watchlist + cotations temps réel + sélection actif
     │   └── AssetTable.tsx         # Tableau actifs avec quote + variation
     ├── analysis/
-    │   ├── AnalysisTab.tsx        # Conteneur graphique + indicateurs + prédiction
-    │   ├── CandleChart.tsx        # Graphique OHLCV (lightweight-charts)
-    │   ├── IndicatorPanel.tsx     # Sélecteur + affichage indicateurs techniques
-    │   └── PredictionOverlay.tsx  # Superposition courbe de prédiction
+    │   ├── AnalysisTab.tsx        # Conteneur graphique + oscillateurs + indicateurs + prédiction
+    │   ├── CandleChart.tsx        # Graphique OHLCV (lightweight-charts) + sélecteur UT chandeliers + lignes Fibonacci
+    │   ├── OscillatorPanel.tsx    # Sous-graphiques RSI(14) et Stoch RSI(14,3,3) sous le chart principal
+    │   ├── IndicatorPanel.tsx     # Toggles Bollinger/volume + valeurs momentum/volatilité (SMA/EMA retirés du panneau d'analyse en v1.3.4)
+    │   └── PredictionOverlay.tsx  # Superposition prédiction — 4 modèles (régression, EMA, Fibonacci, Monte-Carlo)
     ├── trading/
     │   ├── TradingTab.tsx         # Multi-comptes : sélecteur + portfolio + ordres + backtest
     │   ├── PortfolioPanel.tsx     # Positions ouvertes + ordres en attente + stats compte (P&L, valeur)
@@ -878,7 +883,9 @@ src/finance/
 | Clé | Contenu | TTL |
 |-----|---------|-----|
 | `finance-quote-cache` | `PriceCache` — map ticker → `{ quote, fetchedAt }` | 5 min |
-| `finance-hist-cache` | `HistoricalCache` — map `${ticker}-${period}` → `HistoricalData` | 24h |
+| `finance-hist-cache` | `HistoricalCache` — map `${ticker}-${period}` (ou `${ticker}-${period}-${interval}` avec UT explicite) → `HistoricalData` | 24h (30 min en intraday) |
+
+**Timeframe chandeliers (v1.3.4)** : `CandleInterval = '1m'|'5m'|'15m'|'1h'|'4h'|'1d'|'1wk'|'1mo'` — 3ème argument optionnel de `fetchHistorical()`. Le range est clampé à la profondeur max Yahoo par intervalle (`INTERVAL_META`) ; `'4h'` n'existe pas côté Yahoo → fetch 60m + `aggregateCandles(candles, 4)` client. Sans intervalle explicite (mode « Auto »), mapping legacy période → intervalle inchangé.
 
 `clearPriceCache()` supprime les deux clés.
 Quotes fetchées en batches de 10 avec `Promise.allSettled`.
@@ -887,7 +894,9 @@ Quotes fetchées en batches de 10 avec `Promise.allSettled`.
 
 Clé persist : **`patrimoine-finance`** (séparé du store principal `patrimoine-data-[profileId]`).
 
-**Champs persistés** : `watchlist`, `priceAlerts`, `aiApiKey`, `autoRefreshInterval`, `tradingAccounts`, `activeTradingAccountId`, `orders`, `positions`, `trades`, `activeStrategyId`, `strategyParams`
+**Champs persistés** : `watchlist`, `customAssets`, `priceAlerts`, `aiApiKey`, `autoRefreshInterval`, `tradingAccounts`, `activeTradingAccountId`, `orders`, `positions`, `trades`, `activeStrategyId`, `strategyParams`
+
+**Actifs dynamiques (v1.3.4)** : `customAssets: FinanceAsset[]` — actifs ajoutés via la recherche Yahoo (`searchSymbols()` de priceService, endpoint `/v1/finance/search`, champ autocomplete dans MarketTab). `useAllAssets()` (hook exporté du store) = `FINANCE_ASSETS + customAssets`, utilisé par MarketTab, ScreenerTab, PriceAlertsTab, ReplayTab, BacktestPanel, OrderPanel ; `getAssetById()` cherche dans les deux. **Ne pas consommer `FINANCE_ASSETS` directement dans un composant — passer par `useAllAssets()`.**
 
 **Champs NON persistés** (session only) : `activeTab`, `selectedAssetId`, `autoRefreshEnabled`
 
@@ -931,9 +940,10 @@ Clé persist : **`patrimoine-finance`** (séparé du store principal `patrimoine
 - Position unique (flat/long only, pas de short)
 - Métriques : `totalReturn`, `maxDrawdown`, `winRate`, `profitFactor`, `sharpeRatio` (annualisé, risk-free = 0), `buyAndHoldReturn`
 
-**predictionEngine.ts** — 3 modèles, horizon 30 jours, aucune lib externe :
+**predictionEngine.ts** — 4 modèles, horizon 30 jours, aucune lib externe :
 - `linearPrediction` — régression linéaire sur 90 dernières bougies, IC 95% (confidence 0.55)
 - `emaPrediction` — projection EMA20 avec momentum EMA50 + volatilité (confidence 0.50)
+- `fibonacciPrediction(candles, horizon, lookback)` — swing haut/bas (highest/lowest sur `lookback` bougies, défaut 90, configurable dans l'UI), retracements 23.6/38.2/50/61.8/78.6% + extensions 100/127.2/161.8/261.8% exposés via `PredictionResult.levels` / `.swing` ; tracés en `createPriceLine` dans `CandleChart` (confidence 0.40)
 - `monteCarloPrediction` — GBM 200 trajectoires, Box-Muller, sorties P10/P50/P90 (confidence 0.45)
 
 **strategies/** — chaque stratégie implémente `TradingStrategy.run(candles, params) → Signal` :
@@ -991,7 +1001,8 @@ Clé persist : **`patrimoine-finance`** (séparé du store principal `patrimoine
 - Ne pas recalculer les résultats dans un `useEffect` — utiliser le pattern `RunState` / bouton Refresh
 - Ne pas oublier le 3ème argument `events` dans les appels à `runSimulation()`
 - Ne pas modifier `monthlyContribution` dans le store pour gérer les plafonds — utiliser uniquement `capRedirectTo` sur l'enveloppe source et la logique 2-passes dans `simulation.ts`
-- Ne pas remettre `capModalDismissed` à `false` dans `handleRunSimulation` directement — utiliser le paramètre `capDismissed` passé en argument (bug corrigé : le state `capModalDismissed` est mis à `true` uniquement via `onClose` du modal)
+- Ne pas remettre `capModalDismissed` à `false` dans `handleRunSimulation` — il y est LU (`!capDismissed && !capModalDismissed`) pour décider d'ouvrir la modal ; il n'est remis à `false` qu'au changement de simulation active (effet sur `activeSim.id`)
+- **Finance** : ne pas consommer `FINANCE_ASSETS` directement dans un composant — utiliser `useAllAssets()` (fusion avec `customAssets` de la recherche dynamique)
 - **Éducation** : ne pas mélanger `useEducationStore` avec `useStore` ni `useFinanceStore` — stores séparés et indépendants
 - **Éducation** : ne pas modifier les IDs de leçons/exercices (`f-l1`, `a-e2`…) sans prévoir une migration de progression
 - **Tour** : ne pas supprimer les attributs `data-tour-id` des éléments cibles — ils sont requis par `SpotlightOverlay`
@@ -1009,7 +1020,7 @@ Clé persist : **`patrimoine-finance`** (séparé du store principal `patrimoine
 - **Patrimoine** : ne jamais appeler `takeSnapshot()` automatiquement — action utilisateur explicite uniquement
 - **Patrimoine** : `applyVersementsEnAttente()` et `refreshPrixMarche()` sont appelés UNE fois au mount initial d'`App.tsx` (bloc unique ordonné) — ne pas les déplacer dans des useEffect réactifs dispersés, ne pas les déclencher sur un timer
 - **Patrimoine** : pour les prix de marché, ne pas dupliquer la logique Yahoo — tout passe par `fetchQuotes()` de `finance/services/priceService` via `patrimoine/engine/priceFetcher.ts`
-- **Patrimoine/Budget** : `linkedBudgetCategoryId` est purement informatif ; la mise à jour d'encours post-import passe TOUJOURS par la carte Mettre à jour / Ignorer de `CsvImportModal` — jamais d'`upsertLiability()` automatique
+- **Patrimoine/Budget** : aucun lien entre les passifs (`usePatrimoineStore`) et les catégories Budget (`useBudgetStore`) — le champ `linkedBudgetCategoryId` et la proposition post-import de mise à jour d'encours (`LiabilityUpdateProposals`) ont été supprimés en v1.3.3. `CsvImportModal` n'importe que des transactions Budget ; ne pas réintroduire de pont Budget → Patrimoine
 - **Design** : ne pas supprimer `color-scheme: dark`, le style global `select`/`option` ni la var `--bg-elevated` de `index.css` (retour du bug selects blanc-sur-blanc / fonds transparents)
 - **Coach IA** : ne jamais appliquer les événements proposés par le modèle sans passer par la carte de confirmation Confirmer/Annuler ; toute proposition passe par `sanitizeProposedEvents()`
 
@@ -1208,7 +1219,7 @@ Signature : `generateBudgetAlerts(snapshot, envelopes, categories, transactions,
 
 | Composant | Rôle |
 |---|---|
-| `src/budget/components/import/CsvImportModal.tsx` | Wizard 3-4 étapes : upload (CSV/XLSX/XLS, drag-and-drop) → [sélection de feuille si xlsx multi-feuilles] → mapping colonnes + sélection ligne d'en-tête + mode débit/crédit → preview doublons grisés → import. Après import : `LiabilityUpdateProposals` — si des dépenses importées matchent une catégorie liée à un passif (`PatrimoineLiability.linkedBudgetCategoryId`), carte « N remboursements détectés (total X €). Mettre à jour l'encours ? » avec boutons Mettre à jour / Ignorer ; `upsertLiability()` uniquement sur clic explicite (seul pont Budget → Patrimoine autorisé) ; les transactions importées sont capturées au confirm (avant recalcul des hashs) |
+| `src/budget/components/import/CsvImportModal.tsx` | Wizard 3-4 étapes : upload (CSV/XLSX/XLS, drag-and-drop) → [sélection de feuille si xlsx multi-feuilles] → mapping colonnes + sélection ligne d'en-tête + mode débit/crédit → preview doublons grisés → import. N'importe que des transactions Budget — aucun pont vers le Patrimoine (la proposition de mise à jour d'encours de passif a été supprimée en v1.3.3) |
 | `src/budget/components/recurring/RecurringRulesPanel.tsx` | Règles actives (CRUD inline) + Suggestions détectées (Analyser → state local → Confirmer/Ignorer) |
 | `src/budget/components/forecast/CashflowForecastChart.tsx` | Recharts `ComposedChart` — barres revenus/dépenses + ligne pointillée solde net + badge confidence |
 
@@ -1260,7 +1271,6 @@ Actions : `upsertAsset/removeAsset`, `upsertLiability/removeLiability`, `takeSna
 
 - **Les snapshots ne sont JAMAIS pris automatiquement** — uniquement via `takeSnapshot()` sur action explicite (boutons du dashboard patrimonial)
 - `PatrimoineAsset.linkedEnvelopeId` pointe vers `Envelope.id` — **purement informatif**, aucune écriture croisée entre `usePatrimoineStore` et `useStore`
-- `PatrimoineLiability.linkedBudgetCategoryId` pointe vers `BudgetCategory.id` — **purement informatif** ; seul pont : la proposition post-import de relevé bancaire (voir section Budget), résolue par clic explicite
 - `metadata: PatrimoineMetadata` — champs spécifiques par catégorie (immobilier : `adresse`, `surface`, `loyerMensuel`, `encoursCredit`, `dateAcquisition`, `valeurAcquisition` ; bancaire : `etablissement`, `iban`) + champs typés des catégories financières (`group === 'financier'`) :
   - `versementPeriodique?: { montant, frequence: 'monthly'|'quarterly'|'annual', prochaineDate: 'YYYY-MM-DD', actif } | null`
   - `ticker?` (Yahoo Finance, ex. `EWLD.PA`, `BTC-EUR`), `quantite?`, `prixUnitaire?` (calculé au fetch, readonly dans le formulaire), `lastPriceFetchAt?` — si `ticker` + `quantite` renseignés, `currentValue = prixUnitaire × quantite` ; sinon saisie manuelle

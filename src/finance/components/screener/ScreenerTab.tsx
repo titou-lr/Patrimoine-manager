@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { FinanceSelect } from '../ui/FinanceSelect'
-import { FINANCE_ASSETS } from '../../data/financeAssets'
+import { useAllAssets } from '../../store/useFinanceStore'
 import { fetchQuotes, loadHistCache } from '../../services/priceService'
 import { rsi as computeRsi, atr as computeAtr, lastValue } from '../../services/indicatorsService'
 import { getStrategy } from '../../engine/strategies/index'
@@ -65,6 +65,7 @@ const MAX_DISPLAY = 50
 
 export default function ScreenerTab() {
   const { setSelectedAssetId, setActiveTab, activeStrategyId, strategyParams, activeTradingAccountId } = useFinanceStore()
+  const allAssets = useAllAssets()
 
   const [filter, setFilter] = useState<ScreenerFilter>({
     assetClasses: [],
@@ -96,7 +97,7 @@ export default function ScreenerTab() {
     setResults([])
 
     const activeClasses = filter.assetClasses.length > 0 ? filter.assetClasses : ALL_CLASSES
-    const assets = FINANCE_ASSETS.filter(a => activeClasses.includes(a.assetClass))
+    const assets = allAssets.filter(a => activeClasses.includes(a.assetClass))
     const histCache = loadHistCache()
     setProgress({ loaded: 0, total: assets.length })
 
@@ -163,7 +164,7 @@ export default function ScreenerTab() {
     setResults(screenerResults)
     setLoading(false)
     setRan(true)
-  }, [filter, minChange, maxChange, rsiMin, rsiMax, minVolume, activeTradingAccountId, activeStrategyId, strategyParams])
+  }, [filter, minChange, maxChange, rsiMin, rsiMax, minVolume, activeTradingAccountId, activeStrategyId, strategyParams, allAssets])
 
   function handleAnalyze(assetId: string) {
     setSelectedAssetId(assetId)
